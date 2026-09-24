@@ -10,6 +10,17 @@ FetchContent_GetProperties(asio)
 if(NOT asio_POPULATED)
     FetchContent_Populate(asio)
 
+    # OpenSSL 4 made asn1_string_st opaque, but asio 1.16's deprecated
+    # rfc2818_verification dereferences it, so ssl.hpp no longer compiles.
+    # It is unused here (asio 1.34 dropped the include too), so strip it.
+    set(ASIO_SSL_HPP ${asio_SOURCE_DIR}/asio/include/asio/ssl.hpp)
+    file(READ ${ASIO_SSL_HPP} ASIO_SSL_HPP_IN)
+    string(REPLACE "#include \"asio/ssl/rfc2818_verification.hpp\"" ""
+           ASIO_SSL_HPP_OUT "${ASIO_SSL_HPP_IN}")
+    if(NOT ASIO_SSL_HPP_OUT STREQUAL ASIO_SSL_HPP_IN)
+        file(WRITE ${ASIO_SSL_HPP} "${ASIO_SSL_HPP_OUT}")
+    endif()
+
     find_package(Threads)
 
     add_library(asio INTERFACE)
