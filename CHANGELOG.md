@@ -1,3 +1,8 @@
+### 3.2.1.2 (f0rw4rd fork) ###
+
+* Add Python 3.14 support (wheels, classifiers, CI matrix)
+* Upgrade pybind11 to v3.1.0 (required for CPython 3.14)
+
 ### 3.2.1.1 (f0rw4rd fork) ###
 
 Python binding safety:

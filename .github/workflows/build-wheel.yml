@@ -71,7 +71,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-2022]
-        python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - uses: actions/checkout@v4
@@ -171,8 +171,8 @@ jobs:
           Python bindings for [yadnp3](https://github.com/f0rw4rd/opendnp3) -- Yet Another opendnp3 fork (IEEE-1815 DNP3).
 
           ### Supported Platforms
-          - Linux x86_64 (manylinux_2_28, Python 3.9-3.13)
-          - Windows x86_64 (Python 3.9-3.13)
+          - Linux x86_64 (manylinux_2_28, Python 3.9-3.14)
+          - Windows x86_64 (Python 3.9-3.14)
 
           ### Installation
 
@@ -187,8 +187,11 @@ jobs:
     name: Publish to PyPI
     needs: [build-wheels, build-sdist, test-wheels]
     runs-on: ubuntu-latest
-    environment: pypi
+    environment:
+      name: pypi
+      url: https://pypi.org/project/yadnp3/
     permissions:
+      id-token: write  # Required for OIDC trusted publishing
       contents: read
     if: |
       (github.event_name == 'push' && github.ref_type == 'tag') ||
@@ -214,7 +217,5 @@ jobs:
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_SECRET }}
           packages-dir: dist/
           skip-existing: true

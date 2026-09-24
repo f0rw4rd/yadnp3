@@ -6,7 +6,7 @@ Format: OPENDNP3_VERSION.REVISION
 - OPENDNP3_VERSION: The opendnp3 C++ library version (3.1.2)
 - REVISION: Python package revision for that library version
 
-Example: 3.2.1.1 (opendnp3 v3.2.1, first package revision)
+Example: 3.2.1.2 (opendnp3 v3.2.1, second package revision)
 """
 
 import os
@@ -15,7 +15,7 @@ import sys
 
 # Static version configuration
 OPENDNP3_VERSION = "3.2.1"
-PACKAGE_REVISION = 1
+PACKAGE_REVISION = 2
 
 
 def get_git_tag_version():
@@ -53,7 +53,7 @@ if __name__ == "__main__":
             print(get_opendnp3_version())
         elif sys.argv[1] == "--help":
             print("Usage:")
-            print("  python version.py          # Package version (3.2.1.1)")
+            print("  python version.py          # Package version (3.2.1.2)")
             print("  python version.py --lib    # C++ library version (3.2.1)")
         else:
             print("Unknown option. Use --help for usage.")

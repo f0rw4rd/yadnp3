@@ -1,10 +1,10 @@
 [build-system]
-requires = ["scikit-build-core>=0.5", "pybind11>=2.13"]
+requires = ["scikit-build-core>=0.10", "pybind11>=3.0"]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "yadnp3"
-version = "3.2.1.1"
+version = "3.2.1.2"
 description = "Python bindings for yadnp3 -- Yet Another opendnp3 fork (IEEE-1815 DNP3 protocol)"
 readme = "../README.md"
 license = "Apache-2.0"
@@ -37,6 +37,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 
@@ -55,7 +56,7 @@ install.components = ["python"]
 wheel.packages = ["../opendnp3"]
 
 [tool.cibuildwheel]
-build = "cp39-* cp310-* cp311-* cp312-* cp313-*"
+build = "cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*"
 skip = "*-win32 *-musllinux*"
 test-command = 'python -c "import opendnp3; m = opendnp3.DNP3Manager(1); m.Shutdown(); print(\"yadnp3 OK\")"'
 
