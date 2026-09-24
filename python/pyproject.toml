@@ -65,7 +65,9 @@ manylinux-x86_64-image = "manylinux_2_28"
 before-build = "yum install -y openssl-devel"
 
 [tool.cibuildwheel.windows]
-before-build = "choco install --no-progress openssl && pip install delvewheel"
+# Pinned to 3.x: OpenSSL 4 made asn1_string_st opaque, which the vendored
+# asio 1.16 ssl headers (rfc2818_verification) cannot compile against.
+before-build = "choco install --no-progress openssl --version=3.6.2 && pip install delvewheel"
 repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel}"
 
 [tool.pytest.ini_options]
