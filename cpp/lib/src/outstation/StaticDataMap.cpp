@@ -68,4 +68,68 @@ template<> StaticBinaryVariation check_for_promotion<BinarySpec>(const Binary& v
     return variation;
 }
 
+// A variation without flags can only report a point whose flags are ONLINE alone: any other point is reported in the
+// variation of the same width with flags, as IEEE 1815 requires
+static bool is_online_only(const Flags& flags)
+{
+    return flags.value == 0x01;
+}
+
+template<>
+StaticCounterVariation check_for_promotion<CounterSpec>(const Counter& value, StaticCounterVariation variation)
+{
+    if (is_online_only(value.flags))
+    {
+        return variation;
+    }
+
+    switch (variation)
+    {
+    case (StaticCounterVariation::Group20Var5):
+        return StaticCounterVariation::Group20Var1;
+    case (StaticCounterVariation::Group20Var6):
+        return StaticCounterVariation::Group20Var2;
+    default:
+        return variation;
+    }
+}
+
+template<>
+StaticFrozenCounterVariation check_for_promotion<FrozenCounterSpec>(const FrozenCounter& value,
+                                                                    StaticFrozenCounterVariation variation)
+{
+    if (is_online_only(value.flags))
+    {
+        return variation;
+    }
+
+    switch (variation)
+    {
+    case (StaticFrozenCounterVariation::Group21Var9):
+        return StaticFrozenCounterVariation::Group21Var1;
+    case (StaticFrozenCounterVariation::Group21Var10):
+        return StaticFrozenCounterVariation::Group21Var2;
+    default:
+        return variation;
+    }
+}
+
+template<> StaticAnalogVariation check_for_promotion<AnalogSpec>(const Analog& value, StaticAnalogVariation variation)
+{
+    if (is_online_only(value.flags))
+    {
+        return variation;
+    }
+
+    switch (variation)
+    {
+    case (StaticAnalogVariation::Group30Var3):
+        return StaticAnalogVariation::Group30Var1;
+    case (StaticAnalogVariation::Group30Var4):
+        return StaticAnalogVariation::Group30Var2;
+    default:
+        return variation;
+    }
+}
+
 } // namespace opendnp3

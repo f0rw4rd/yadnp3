@@ -554,7 +554,8 @@ TEST_CASE(SUITE("RreadGrp20Var1ViaIntegrity"))
 
 TEST_CASE(SUITE("RreadGrp20Var5ViaIntegrity"))
 {
-    NewTestStaticRead("C0 01 14 05 06", "C0 81 80 00 14 05 00 00 00 00 00 00 00"); // 1 byte start/stop, RESTART quality
+    // RESTART quality, which g20v5 can't report: promoted to g20v1
+    NewTestStaticRead("C0 01 14 05 06", "C0 81 80 00 14 01 00 00 00 02 00 00 00 00");
 }
 
 TEST_CASE(SUITE("ReadGrp30Var0ViaIntegrity"))
@@ -571,7 +572,8 @@ TEST_CASE(SUITE("ReadGrp30Var1ViaIntegrity"))
 
 TEST_CASE(SUITE("ReadGrp30Var3ViaIntegrity"))
 {
-    NewTestStaticRead("C0 01 1E 03 06", "C0 81 80 00 1E 03 00 00 00 00 00 00 00"); // 1 byte start/stop, RESTART quality
+    // RESTART quality, which g30v3 can't report: promoted to g30v1
+    NewTestStaticRead("C0 01 1E 03 06", "C0 81 80 00 1E 01 00 00 00 02 00 00 00 00");
 }
 
 TEST_CASE(SUITE("ReadGrp40Var0ViaIntegrity"))
@@ -657,6 +659,35 @@ TEST_CASE(SUITE("Group1Var1 is promoted to Group1Var2 if quality not online"))
     t.SendToOutstation("C0 01 3C 01 06"); // Read class 0
 
     REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 00 01 02 00 00 01 02 02");
+}
+
+TEST_CASE(SUITE("A variation without flags is promoted to one with flags if quality not online"))
+{
+    DatabaseConfig database;
+    database.counter[0].svariation = StaticCounterVariation::Group20Var5;
+    database.counter[1].svariation = StaticCounterVariation::Group20Var5;
+    database.analog_input[0].svariation = StaticAnalogVariation::Group30Var4;
+    database.frozen_counter[0].svariation = StaticFrozenCounterVariation::Group21Var9;
+    OutstationTestObject t(OutstationConfig(), std::move(database));
+
+    t.Transaction([](IUpdateHandler& db) {
+        db.Update(Counter(5, Flags(0x05)), 0); // COMM_LOST
+        db.Update(Counter(6, Flags(0x01)), 1);
+        db.Update(Analog(7, Flags(0x05)), 0);
+        db.Modify(FlagsType::FrozenCounter, 0, 0, 0x05);
+    });
+    t.LowerLayerUp();
+
+    t.SendToOutstation("C0 01 14 05 06"); // g20v5
+    REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 00 14 01 00 00 00 05 05 00 00 00 14 05 00 01 01 06 00 00 00");
+    t.OnTxReady();
+
+    t.SendToOutstation("C1 01 1E 04 06"); // g30v4
+    REQUIRE(t.lower->PopWriteAsHex() == "C1 81 80 00 1E 02 00 00 00 05 07 00");
+    t.OnTxReady();
+
+    t.SendToOutstation("C2 01 15 09 06"); // g21v9
+    REQUIRE(t.lower->PopWriteAsHex() == "C2 81 80 00 15 01 00 00 00 05 00 00 00 00");
 }
 
 TEST_CASE(SUITE("ReadGrp20Var1"))

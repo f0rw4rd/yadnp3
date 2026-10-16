@@ -44,6 +44,12 @@ typename Spec::static_variation_t check_for_promotion(const typename Spec::meas_
 }
 
 template<> StaticBinaryVariation check_for_promotion<BinarySpec>(const Binary& value, StaticBinaryVariation variation);
+template<>
+StaticCounterVariation check_for_promotion<CounterSpec>(const Counter& value, StaticCounterVariation variation);
+template<>
+StaticFrozenCounterVariation check_for_promotion<FrozenCounterSpec>(const FrozenCounter& value,
+                                                                    StaticFrozenCounterVariation variation);
+template<> StaticAnalogVariation check_for_promotion<AnalogSpec>(const Analog& value, StaticAnalogVariation variation);
 
 template<class Spec> class StaticDataMap : private Uncopyable
 {
