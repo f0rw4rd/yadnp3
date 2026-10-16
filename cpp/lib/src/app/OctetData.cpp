@@ -23,6 +23,7 @@
 #include <ser4cpp/container/SequenceTypes.h>
 #include <ser4cpp/util/Comparisons.h>
 
+#include <algorithm>
 #include <cstring>
 
 namespace opendnp3
@@ -32,9 +33,12 @@ OctetData::OctetData() : size(1) {}
 
 OctetData::OctetData(const char* input) : OctetData(ToSlice(input)) {}
 
-OctetData::OctetData(const Buffer& input) : size(ser4cpp::min<uint8_t>(MAX_SIZE, static_cast<uint8_t>(input.length)))
+// an empty input is held as one zero octet: the size is the variation of g110/g111, and variation 0 only
+// appears in requests
+OctetData::OctetData(const Buffer& input)
+    : size(input.length == 0 ? 1 : static_cast<uint8_t>(std::min<size_t>(MAX_SIZE, input.length)))
 {
-    if (size > 0)
+    if (input.length > 0)
     {
         ser4cpp::rseq_t input_slice(input.data, input.length);
         ser4cpp::wseq_t dest(buffer.data(), buffer.size());
@@ -47,8 +51,9 @@ bool OctetData::Set(const Buffer& input)
     ser4cpp::rseq_t input_slice(input.data, input.length);
     if (input_slice.is_empty())
     {
-        this->size = 0;
-        return true;
+        this->size = 1;
+        this->buffer[0] = 0x00;
+        return false;
     }
 
     const bool is_oversized = input_slice.length() > MAX_SIZE;

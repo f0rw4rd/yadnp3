@@ -338,6 +338,25 @@ TEST_CASE(SUITE("static octet strings switch headers if length differs"))
     REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 00 6E 01 00 00 00 61 6E 02 00 01 01 62 62");
 }
 
+TEST_CASE(SUITE("an empty octet string is reported as one zero octet, not as variation 0"))
+{
+    OutstationConfig config;
+    OutstationTestObject t(config, configure::by_count_of::octet_string(1));
+
+    REQUIRE(t.context.GetUpdateHandler().Update(OctetString(opendnp3::Buffer(nullptr, 0)), 0));
+
+    t.LowerLayerUp();
+    t.SendToOutstation("C0 01 6E 00 06"); // g110v0
+    REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 00 6E 01 00 00 00 00");
+}
+
+TEST_CASE(SUITE("an octet string longer than 255 octets is cut to 255"))
+{
+    const std::vector<uint8_t> data(300, 0xAA);
+    REQUIRE(OctetString(opendnp3::Buffer(data.data(), 256)).Size() == 255);
+    REQUIRE(OctetString(opendnp3::Buffer(data.data(), 300)).Size() == 255);
+}
+
 TEST_CASE(SUITE("octet strings can be returned by reading g110v0"))
 {
     OutstationConfig config;
