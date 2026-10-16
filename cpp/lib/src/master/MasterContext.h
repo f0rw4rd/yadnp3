@@ -45,6 +45,7 @@
 
 #include <deque>
 #include <memory>
+#include <vector>
 
 namespace opendnp3
 {
@@ -99,6 +100,8 @@ public:
     bool isSending = false;
     AppSeqNum solSeq;
     AppSeqNum unsolSeq;
+    // the last unsolicited fragment that asked for a confirmation (control, IIN and objects), to recognise its retries
+    std::vector<uint8_t> lastUnsolicited;
     std::shared_ptr<IMasterTask> activeTask;
     exe4cpp::Timer responseTimer;
 

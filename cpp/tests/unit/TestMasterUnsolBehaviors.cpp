@@ -47,3 +47,44 @@ TEST_CASE(SUITE("ReceiveUnsolBeforeTransmit"))
 
     REQUIRE(t.lower->PopWriteAsHex() == hex::IntegrityPoll(0));
 }
+
+TEST_CASE(SUITE("A repeated unsolicited fragment is confirmed again but not processed again"))
+{
+    MasterTestFixture t(NoStartupTasks());
+    t.context->OnLowerLayerUp();
+    t.exe->run_many();
+
+    const std::string unsol = "F2 82 00 00 01 02 00 02 02 81"; // seq 2, g1v2 index 2
+    t.SendToMaster(unsol);
+    REQUIRE(t.lower->PopWriteAsHex() == hex::UnsolConfirm(2));
+    t.context->OnTxReady();
+    REQUIRE(t.meas->TotalReceived() == 1);
+
+    // the confirm was lost, and the outstation sends the fragment again
+    t.SendToMaster(unsol);
+    REQUIRE(t.lower->PopWriteAsHex() == hex::UnsolConfirm(2));
+    t.context->OnTxReady();
+    REQUIRE(t.meas->TotalReceived() == 1);
+
+    // a new fragment with the next sequence number is processed
+    t.SendToMaster("F3 82 00 00 01 02 00 02 02 01");
+    REQUIRE(t.lower->PopWriteAsHex() == hex::UnsolConfirm(3));
+    t.context->OnTxReady();
+    REQUIRE(t.meas->TotalReceived() == 2);
+}
+
+TEST_CASE(SUITE("An unsolicited fragment with the same sequence number but other content is processed"))
+{
+    MasterTestFixture t(NoStartupTasks());
+    t.context->OnLowerLayerUp();
+    t.exe->run_many();
+
+    t.SendToMaster("F2 82 00 00 01 02 00 02 02 81");
+    t.lower->PopWriteAsHex();
+    t.context->OnTxReady();
+
+    t.SendToMaster("F2 82 00 00 01 02 00 02 02 01");
+    REQUIRE(t.lower->PopWriteAsHex() == hex::UnsolConfirm(2));
+    t.context->OnTxReady();
+    REQUIRE(t.meas->TotalReceived() == 2);
+}
