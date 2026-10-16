@@ -306,6 +306,18 @@ bool FileWriteTask::ParseGroup70Var6(const ser4cpp::rseq_t& objects)
         ser4cpp::LittleEndian::read(data, blockNum);
 
         lastStatus = static_cast<FileStatus>(data[0]);
+
+        // the acknowledgement must be of the file opened, and of the block just written
+        if (handle != fileHandle)
+        {
+            lastStatus = FileStatus::HANDLE_EXPIRED;
+            return false;
+        }
+        if ((blockNum & 0x7FFFFFFF) != currentBlockNum)
+        {
+            lastStatus = FileStatus::BLOCK_SEQ;
+            return false;
+        }
     }
     else // var == 4
     {
@@ -374,6 +386,11 @@ IMasterTask::ResponseResult FileWriteTask::ProcessResponse(const APDUResponseHea
         // Parse the write acknowledgment
         if (!ParseGroup70Var6(objects))
         {
+            // a block not acknowledged fails the write
+            if (lastStatus == FileStatus::SUCCESS)
+            {
+                lastStatus = FileStatus::FATAL;
+            }
             state = State::CLOSE_FILE;
             return ResponseResult::OK_REPEAT;
         }

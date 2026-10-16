@@ -121,6 +121,56 @@ TEST_CASE(SUITE("ReadFile fails on more data than the file size the outstation g
     REQUIRE(test.results[0].data.empty());
 }
 
+namespace
+{
+
+// writes a 4-octet file, block 0 acknowledged with the g70v6 given, and returns the result
+FileWriteResult WriteFileWithAck(const std::string& ackHex)
+{
+    MasterTestFixture t(NoStartupTasks());
+    t.context->OnLowerLayerUp();
+    std::vector<FileWriteResult> results;
+    t.context->WriteFile("x", {0xAA, 0xBB, 0xCC, 0xDD}, FilePermissions(),
+                         [&](const FileWriteResult& r) { results.push_back(r); });
+    t.exe->run_many();
+
+    REQUIRE(t.lower->PopWriteAsHex().substr(0, 5) == "C0 19"); // OPEN
+    t.context->OnTxReady();
+    t.SendToMaster(OpenResponse("00 00 00 00"));
+    t.exe->run_many();
+
+    REQUIRE(t.lower->PopWriteAsHex().substr(0, 11) == "C1 02 46 05"); // WRITE block 0
+    t.context->OnTxReady();
+    t.SendToMaster("C1 81 00 00 46 06 5B 01 09 00 " + ackHex);
+    t.exe->run_many();
+
+    REQUIRE(t.lower->PopWriteAsHex().substr(0, 5) == "C2 1A"); // CLOSE
+    t.context->OnTxReady();
+    t.SendToMaster("C2 81 00 00 46 04 5B 01 0D 00 01 00 00 00 00 00 00 00 00 00 00 00 00");
+    t.exe->run_many();
+
+    REQUIRE(results.size() == 1);
+    return results[0];
+}
+
+} // namespace
+
+TEST_CASE(SUITE("WriteFile succeeds when every block is acknowledged"))
+{
+    REQUIRE(WriteFileWithAck("01 00 00 00 00 00 00 80 00").statusCode == FileStatus::SUCCESS);
+}
+
+TEST_CASE(SUITE("WriteFile fails on an acknowledgement of another block or handle"))
+{
+    REQUIRE(WriteFileWithAck("01 00 00 00 05 00 00 00 00").statusCode == FileStatus::BLOCK_SEQ);
+    REQUIRE(WriteFileWithAck("EF BE AD DE 00 00 00 80 00").statusCode == FileStatus::HANDLE_EXPIRED);
+}
+
+TEST_CASE(SUITE("WriteFile fails on a malformed acknowledgement"))
+{
+    REQUIRE(WriteFileWithAck("01 00 00").statusCode == FileStatus::FATAL);
+}
+
 TEST_CASE(SUITE("GetFileInfo asks with a file descriptor (g70v7)"))
 {
     MasterTestFixture t(NoStartupTasks());
