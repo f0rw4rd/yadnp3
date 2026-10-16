@@ -100,6 +100,8 @@ bool LinkContext::OnLowerLayerDown()
     pSecState = &SLLS_NotReset::Instance();
 
     listener->OnStateChange(LinkStatus::UNRESET);
+    // a check in progress can't complete on this session
+    this->CompleteLinkStatusChecks(false);
     upper->OnLowerLayerDown();
 
     return true;
@@ -291,22 +293,23 @@ void LinkContext::FailKeepAlive(bool timeout)
     {
         this->listener->OnKeepAliveFailure();
     }
-    if (this->userLinkStatusCallback)
-    {
-        auto cb = std::move(this->userLinkStatusCallback);
-        this->userLinkStatusCallback = nullptr;
-        cb(false);
-    }
+    this->CompleteLinkStatusChecks(false);
 }
 
 void LinkContext::CompleteKeepAlive()
 {
     this->listener->OnKeepAliveSuccess();
-    if (this->userLinkStatusCallback)
+    this->CompleteLinkStatusChecks(true);
+}
+
+void LinkContext::CompleteLinkStatusChecks(bool success)
+{
+    // a callback may start another check, which waits for the next keep-alive
+    auto callbacks = std::move(this->userLinkStatusCallbacks);
+    this->userLinkStatusCallbacks.clear();
+    for (auto& callback : callbacks)
     {
-        auto cb = std::move(this->userLinkStatusCallback);
-        this->userLinkStatusCallback = nullptr;
-        cb(true);
+        callback(success);
     }
 }
 
@@ -321,7 +324,10 @@ void LinkContext::TriggerLinkStatusCheck(std::function<void(bool)> callback)
         return;
     }
 
-    this->userLinkStatusCallback = std::move(callback);
+    if (callback)
+    {
+        this->userLinkStatusCallbacks.push_back(std::move(callback));
+    }
     this->keepAliveTimeout = true;
     this->TryStartTransmission();
 }

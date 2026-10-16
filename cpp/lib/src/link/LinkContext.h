@@ -39,6 +39,7 @@
 
 #include <functional>
 #include <memory>
+#include <vector>
 
 namespace opendnp3
 {
@@ -110,6 +111,7 @@ public:
     void CancelTimer();
     void FailKeepAlive(bool timeout);
     void CompleteKeepAlive();
+    void CompleteLinkStatusChecks(bool success);
 
     /// Manually trigger REQUEST_LINK_STATUS with a one-shot callback
     void TriggerLinkStatusCheck(std::function<void(bool)> callback);
@@ -135,7 +137,8 @@ public:
     bool nextReadFCB;
     bool isOnline;
     bool keepAliveTimeout;
-    std::function<void(bool)> userLinkStatusCallback;
+    // the user checks of the link status waiting for the keep-alive in progress
+    std::vector<std::function<void(bool)>> userLinkStatusCallbacks;
     Timestamp lastMessageTimestamp;
     StackStatistics::Link statistics;
 

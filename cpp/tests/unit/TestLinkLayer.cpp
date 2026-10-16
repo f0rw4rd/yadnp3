@@ -25,7 +25,9 @@
 
 #include <catch.hpp>
 
+#include <algorithm>
 #include <iostream>
+#include <vector>
 
 using namespace opendnp3;
 using namespace ser4cpp;
@@ -206,6 +208,42 @@ TEST_CASE(SUITE("RequestStatusOfLink"))
               1024); // should be able to request this before the link is reset
     REQUIRE(t.NumTotalWrites() == 3);
     REQUIRE(t.PopLastWriteAsHex() == LinkHex::LinkStatus(true, false, 1024, 1));
+}
+
+TEST_CASE(SUITE("CheckLinkStatus fails a pending check when the layer goes down"))
+{
+    LinkLayerTest t;
+    t.link.OnLowerLayerUp();
+
+    std::vector<bool> results;
+    t.link.CheckLinkStatus([&](bool ok) { results.push_back(ok); });
+    REQUIRE(t.NumTotalWrites() == 1); // request link status
+    t.link.OnTxReady();
+
+    t.link.OnLowerLayerDown();
+    REQUIRE(results == std::vector<bool>{false});
+
+    // a keep-alive on the next session doesn't answer the old check
+    t.link.OnLowerLayerUp();
+    REQUIRE(results == std::vector<bool>{false});
+}
+
+TEST_CASE(SUITE("CheckLinkStatus answers every check"))
+{
+    LinkLayerTest t;
+    t.link.OnLowerLayerUp();
+
+    std::vector<int> results;
+    t.link.CheckLinkStatus([&](bool ok) { results.push_back(ok ? 1 : 0); });
+    REQUIRE(t.NumTotalWrites() == 1);
+    t.link.OnTxReady();
+
+    // a second check while the first is in progress
+    t.link.CheckLinkStatus([&](bool ok) { results.push_back(ok ? 11 : 10); });
+
+    t.OnFrame(LinkFunction::SEC_LINK_STATUS, false, false, false, 1, 1024);
+    std::sort(results.begin(), results.end());
+    REQUIRE(results == std::vector<int>{1, 11});
 }
 
 TEST_CASE(SUITE("BroadcastRequestStatusOfLink"))
