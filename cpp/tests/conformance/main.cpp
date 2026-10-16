@@ -24,7 +24,7 @@
  * The configuration comes from the command line. Once the outstation listens it
  * prints "READY". Each line on stdin is a command, answered by one line on stdout
  * that starts with "OK" or "ERR". Lines starting with "EV" report what the master
- * did: operated an output, wrote the time, or assigned classes.
+ * did: operated an output, wrote the time, or assigned classes, and the state of the channel.
  *
  *   bi|dbi|cnt|ai|bo|ao <index> <value> <flags> <event 0|1>   update a point, answers "OK <ms> <quality>"
  *   freeze <index> <clear 0|1>                               freeze a counter, answers "OK <ms> <quality>"
@@ -37,6 +37,7 @@
 
 #include <opendnp3/logging/ILogHandler.h>
 #include <opendnp3/DNP3Manager.h>
+#include <opendnp3/channel/IChannelListener.h>
 #include <opendnp3/logging/LogLevels.h>
 #include <opendnp3/outstation/ICommandHandler.h>
 #include <opendnp3/outstation/IOutstationApplication.h>
@@ -403,6 +404,16 @@ private:
     std::set<uint16_t> local;
 };
 
+// reports the channel's state, so the plugin sees the outstation notice a connection close
+class ChannelListener final : public IChannelListener
+{
+public:
+    void OnStateChange(ChannelState state) override
+    {
+        Emit("EV CHANNEL " + std::string(ChannelStateSpec::to_human_string(state)));
+    }
+};
+
 // stdout carries the control protocol, so the stack logs to stderr
 class StderrLogger final : public ILogHandler
 {
@@ -502,7 +513,8 @@ int main(int argc, char* argv[])
     const auto log_levels = ParseLogLevels(options.log_levels);
     DNP3Manager manager(1, std::make_shared<StderrLogger>());
     auto channel = manager.AddTCPServer("server", log_levels, ServerAcceptMode::CloseExisting,
-                                        IPEndpoint(options.address, options.port), nullptr);
+                                        IPEndpoint(options.address, options.port),
+                                        std::make_shared<ChannelListener>());
     auto outstation = channel->AddOutstation("outstation", commands, app, config);
 
     // the starting values, as the plugin's mirror starts them: every point ONLINE, and off or zero but for the

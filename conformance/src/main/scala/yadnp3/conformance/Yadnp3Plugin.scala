@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 /** How the outstation process is configured; a change takes a power cycle */
 final case class StackSettings(
+    port: Int = 20000,
     remoteAddress: Int = 1,
     unsolicited: Boolean = false,
     unsolicitedRetries: Option[Int] = None,
@@ -22,20 +23,25 @@ final case class StackSettings(
  * Runs yadnp3's conformance-outstation (cpp/tests/conformance) for each procedure, generates events through its
  * control protocol, and checks responses against what it was told to hold
  */
-class Yadnp3Plugin(binary: String, logDir: File) extends IntegrationPlugin {
+class Yadnp3Plugin(binary: String, logDir: File, address: String, absent: Set[PointKind] = Set.empty)
+    extends IntegrationPlugin {
 
   import PointKind._
 
   private val numInputs = 10
   private val numOutputs = 20
 
-  private var settings = StackSettings()
+  // the outstation as configured for the run: without the kinds of points it doesn't have
+  private val initial = StackSettings(disabled = absent)
+  private var settings = initial
   private var process: Option[OutstationProcess] = None
   private var mirror = new Mirror(numInputs, numOutputs, Set.empty)
   private var batch = 0
   private var procedure = 0
   private val crobs = new ConcurrentLinkedQueue[Int]()
   private val analogs = new ConcurrentLinkedQueue[Int]()
+  // the channel states the outstation reported since it started, oldest first
+  private val channelStates = new java.util.concurrent.LinkedBlockingQueue[String]()
 
   private def outstation: OutstationProcess = process.getOrElse(throw new Exception("the outstation isn't running"))
 
@@ -81,12 +87,15 @@ class Yadnp3Plugin(binary: String, logDir: File) extends IntegrationPlugin {
       analogs.add(index)
       synchronized(mirror.set(Value(AnalogOutputStatus, index, value, 0x01, 0)))
     case Notification.Assign(t, c, start, stop) => onAssign(t, c, start, stop)
+    case Notification.Channel(state) => channelStates.put(state)
     case _ => ()
   }
 
   private def start(reporter: PluginReporter): Unit = {
     val s = settings
     val args = Seq(
+      "--address", address,
+      "--port", s.port.toString,
       "--remote", s.remoteAddress.toString,
       "--unsol", if (s.unsolicited) "1" else "0",
       "--unsol-retries", s.unsolicitedRetries.getOrElse(-1).toString,
@@ -100,6 +109,7 @@ class Yadnp3Plugin(binary: String, logDir: File) extends IntegrationPlugin {
     crobs.clear()
     analogs.clear()
     assigned.clear()
+    channelStates.clear()
     mirror = new Mirror(numInputs, numOutputs, s.disabled)
     process = Some(new OutstationProcess(binary, args, log, onNotification))
     if (s.localOutputs.nonEmpty) applyLocal(s.localOutputs)
@@ -157,7 +167,7 @@ class Yadnp3Plugin(binary: String, logDir: File) extends IntegrationPlugin {
 
   override def startProcedure(reporter: PluginReporter): Unit = {
     procedure += 1
-    settings = StackSettings()
+    settings = initial
     batch = 0
     start(reporter)
   }
@@ -239,7 +249,7 @@ class Yadnp3Plugin(binary: String, logDir: File) extends IntegrationPlugin {
   }
 
   override def reinstallPoints(reporter: PluginReporter): Unit = {
-    settings = settings.copy(disabled = Set.empty)
+    settings = settings.copy(disabled = absent)
     reporter.log("Reinstalling every point")
     restart(reporter)
   }
@@ -541,6 +551,34 @@ class Yadnp3Plugin(binary: String, logDir: File) extends IntegrationPlugin {
 
   override def verifyTimestamp(reporter: CheckReporter, points: Seq[GenIndexedPoint[MeasurementPoint]]): Option[DeferredCheck] = {
     verifyEvents(reporter, kindsOf(EventClass.All), EventClass.All, None, reset = true, points)
+    None
+  }
+
+  override def configureNetwork(reporter: PluginReporter, setup: NetworkSetup): Unit = {
+    if (setup.mode != NetworkMode.Tcp) fail(s"the outstation only uses TCP: ${setup.describe}")
+    if (setup.allowedMasters != AllowedMasters.Any) fail(s"the outstation accepts any master: ${setup.describe}")
+    settings = settings.copy(port = setup.port)
+    reporter.log(s"Network: ${setup.describe}")
+    restart(reporter)
+  }
+
+  override def restoreNetwork(reporter: PluginReporter): Unit = {
+    settings = settings.copy(port = initial.port)
+    reporter.log("Network restored: TCP on port 20000, accepting any master")
+    restart(reporter)
+  }
+
+  // the channel goes back to OPENING once the outstation notices the connection closed
+  override def verifyDisconnectNoticed(reporter: CheckReporter): Option[DeferredCheck] = {
+    val deadline = System.currentTimeMillis() + 5000
+    var noticed = false
+    while (!noticed && System.currentTimeMillis() < deadline) {
+      Option(channelStates.poll(100, java.util.concurrent.TimeUnit.MILLISECONDS)).foreach { state =>
+        reporter.log(s"Channel state: $state")
+        noticed = state == "OPENING" || state == "CLOSED"
+      }
+    }
+    if (!noticed) fail("the outstation didn't notice the connection close within 5 s")
     None
   }
 

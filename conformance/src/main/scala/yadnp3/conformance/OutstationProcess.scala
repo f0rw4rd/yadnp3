@@ -11,6 +11,8 @@ enum Notification {
   case ColdRestart
   // the master assigned the points start to stop of the type (AssignClassType) to the class (PointClass bits)
   case Assign(pointType: Int, pointClass: Int, start: Int, stop: Int)
+  // the channel's state changed: OPEN when a master connects, OPENING again when the connection closes
+  case Channel(state: String)
 }
 
 /** A time the outstation stamped an update with */
@@ -47,6 +49,7 @@ final class OutstationProcess(binary: String, args: Seq[String], logFile: File, 
     case "TIME" :: ms :: Nil => Some(Notification.Time(ms.toLong))
     case "COLDRESTART" :: Nil => Some(Notification.ColdRestart)
     case "ASSIGN" :: t :: c :: start :: stop :: Nil => Some(Notification.Assign(t.toInt, c.toInt, start.toInt, stop.toInt))
+    case "CHANNEL" :: state :: Nil => Some(Notification.Channel(state))
     case _ => None
   }
 
