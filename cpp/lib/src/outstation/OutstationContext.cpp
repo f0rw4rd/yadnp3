@@ -1216,7 +1216,8 @@ IINField OContext::HandleGetFileInfo(const ser4cpp::rseq_t& objects, HeaderWrite
         return IINField(IINBit::FUNC_NOT_SUPPORTED);
     }
 
-    // Parse Group70Var8 (file specification string)
+    // Parse Group70Var7 (file descriptor, as IEEE 1815 has it), or Group70Var8 (file specification string), which
+    // older versions of this library's master send
     auto data = objects;
 
     if (data.length() < 3)
@@ -1227,7 +1228,7 @@ IINField OContext::HandleGetFileInfo(const ser4cpp::rseq_t& objects, HeaderWrite
     uint8_t qc = data[2];
     data.advance(3);
 
-    if (group != 70 || var != 8 || qc != 0x5B)
+    if (group != 70 || (var != 7 && var != 8) || qc != 0x5B)
         return IINField(IINBit::PARAM_ERROR);
 
     if (data.length() < 1)
@@ -1242,7 +1243,23 @@ IINField OContext::HandleGetFileInfo(const ser4cpp::rseq_t& objects, HeaderWrite
     if (data.length() < dataLen)
         return IINField(IINBit::PARAM_ERROR);
 
-    std::string filename(reinterpret_cast<const char*>(static_cast<const uint8_t*>(data)), dataLen);
+    const auto object = data.take(dataLen);
+    std::string filename;
+    if (var == 8)
+    {
+        filename.assign(reinterpret_cast<const char*>(static_cast<const uint8_t*>(object)), dataLen);
+    }
+    else
+    {
+        if (dataLen < 20)
+            return IINField(IINBit::PARAM_ERROR);
+        uint16_t fileNameOffset = 0;
+        uint16_t fileNameLength = 0;
+        ser4cpp::LittleEndian::read(data, fileNameOffset);
+        ser4cpp::LittleEndian::read(data, fileNameLength);
+        if (!ReadObjectString(object, fileNameOffset, fileNameLength, 20, filename))
+            return IINField(IINBit::PARAM_ERROR);
+    }
 
     auto result = this->fileHandler->GetFileInfo(filename);
 
@@ -1312,8 +1329,8 @@ IINField OContext::HandleAuthenticateFile(const ser4cpp::rseq_t& objects, Header
 
     auto result = this->fileHandler->AuthenticateFile(username, password);
 
-    // Respond with Group70Var4 containing the auth key as fileHandle
-    this->WriteGroup70Var4Response(writer, result.authKey, 0, 0, 0, result.status);
+    // the response is a Group70Var2 with the key, 0 if the credentials aren't accepted
+    this->WriteGroup70Var2Response(writer, result.status == FileStatus::SUCCESS ? result.authKey : 0);
     return IINField::Empty();
 }
 
@@ -1423,6 +1440,39 @@ IINField OContext::HandleFileWrite(const ser4cpp::rseq_t& objects, HeaderWriter&
 }
 
 //// ----------------------------- Group70 response writers -----------------------------
+
+bool OContext::WriteGroup70Var2Response(HeaderWriter& writer, uint32_t authKey)
+{
+    // Group70Var2: user_name_offset(u16), user_name_size(u16), password_offset(u16),
+    //             password_size(u16), authentication_key(u32), with no user name or password
+    const uint16_t dataLen = 12;
+    const size_t totalLen = 3 + 1 + 2 + dataLen;
+
+    if (writer.Remaining() < totalLen)
+        return false;
+
+    if (!writer.WriteHeader(GroupVariationID(70, 2), QualifierCode::UINT8_CNT_UINT16_FREE_FORMAT))
+        return false;
+
+    uint8_t countBuf[1] = {1};
+    writer.WriteRawBytes(countBuf, 1);
+
+    uint8_t lenBuf[2];
+    lenBuf[0] = static_cast<uint8_t>(dataLen & 0xFF);
+    lenBuf[1] = static_cast<uint8_t>((dataLen >> 8) & 0xFF);
+    writer.WriteRawBytes(lenBuf, 2);
+
+    uint8_t buf[12];
+    auto wseq = ser4cpp::wseq_t(buf, 12);
+    ser4cpp::UInt16::write_to(wseq, dataLen);
+    ser4cpp::UInt16::write_to(wseq, 0);
+    ser4cpp::UInt16::write_to(wseq, dataLen);
+    ser4cpp::UInt16::write_to(wseq, 0);
+    ser4cpp::UInt32::write_to(wseq, authKey);
+    writer.WriteRawBytes(buf, 12);
+
+    return true;
+}
 
 bool OContext::WriteGroup70Var4Response(HeaderWriter& writer,
                                         uint32_t fileHandle,

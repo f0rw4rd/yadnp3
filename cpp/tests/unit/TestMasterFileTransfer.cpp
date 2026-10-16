@@ -120,3 +120,33 @@ TEST_CASE(SUITE("ReadFile fails on more data than the file size the outstation g
     REQUIRE(test.results[0].statusCode == FileStatus::BUFFER_OVERFLOW);
     REQUIRE(test.results[0].data.empty());
 }
+
+TEST_CASE(SUITE("GetFileInfo asks with a file descriptor (g70v7)"))
+{
+    MasterTestFixture t(NoStartupTasks());
+    t.context->OnLowerLayerUp();
+    t.context->GetFileInfo("x", [](const FileInfoResult&) {});
+    t.exe->run_many();
+
+    // length 21: name offset 20, name length 1, the other fields zero, then the name
+    REQUIRE(t.lower->PopWriteAsHex()
+            == "C0 1C 46 07 5B 01 15 00 14 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 78");
+}
+
+TEST_CASE(SUITE("AuthenticateFile takes the key from the g70v2 response"))
+{
+    MasterTestFixture t(NoStartupTasks());
+    t.context->OnLowerLayerUp();
+    std::vector<FileAuthResult_t> results;
+    t.context->AuthenticateFile("u", "p", [&](const FileAuthResult_t& r) { results.push_back(r); });
+    t.exe->run_many();
+
+    REQUIRE(t.lower->PopWriteAsHex().substr(0, 11) == "C0 1D 46 02");
+    t.context->OnTxReady();
+    t.SendToMaster("C0 81 00 00 46 02 5B 01 0C 00 0C 00 00 00 0C 00 00 00 78 56 34 12");
+    t.exe->run_many();
+
+    REQUIRE(results.size() == 1);
+    REQUIRE(results[0].statusCode == FileStatus::SUCCESS);
+    REQUIRE(results[0].authKey == 0x12345678);
+}

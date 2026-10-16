@@ -199,6 +199,7 @@ private:
     IINField HandleFileWrite(const ser4cpp::rseq_t& objects, HeaderWriter& writer);
 
     // Helper: write Group70 free-format objects into writer
+    bool WriteGroup70Var2Response(HeaderWriter& writer, uint32_t authKey);
     bool WriteGroup70Var4Response(HeaderWriter& writer,
                                   uint32_t fileHandle,
                                   uint32_t fileSize,

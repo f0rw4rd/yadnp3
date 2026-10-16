@@ -36,10 +36,12 @@ class RecordingFileHandler final : public IFileHandler
 public:
     std::vector<std::string> opened;
     std::vector<std::pair<std::string, std::string>> authenticated;
+    std::vector<std::string> described;
     size_t blockSize = 4;
 
     FileCommandResult GetFileInfo(const std::string& filename) override
     {
+        described.push_back(filename);
         return FileCommandResult();
     }
 
@@ -85,7 +87,10 @@ public:
     FileAuthResult AuthenticateFile(const std::string& username, const std::string& password) override
     {
         authenticated.emplace_back(username, password);
-        return FileAuthResult();
+        FileAuthResult result;
+        result.status = FileStatus::SUCCESS;
+        result.authKey = 0x12345678;
+        return result;
     }
 };
 
@@ -153,4 +158,25 @@ TEST_CASE(SUITE("READ of a block answers with its data"))
 
     t.SendToOutstation("C0 01 46 05 5B 01 08 00 07 00 00 00 00 00 00 00");
     REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 00 46 05 5B 01 0C 00 07 00 00 00 00 00 00 80 AA AA AA AA");
+}
+
+TEST_CASE(SUITE("AUTHENTICATE answers with the key in a g70v2"))
+{
+    auto files = std::make_shared<RecordingFileHandler>();
+    OutstationTestObject t(OutstationConfig(), DatabaseConfig(), files);
+    t.LowerLayerUp();
+
+    t.SendToOutstation("C0 1D 46 02 5B 01 10 00 0C 00 02 00 0E 00 02 00 00 00 00 00 75 31 70 31");
+    REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 00 46 02 5B 01 0C 00 0C 00 00 00 0C 00 00 00 78 56 34 12");
+}
+
+TEST_CASE(SUITE("GET_FILE_INFO takes the file name from a g70v7"))
+{
+    auto files = std::make_shared<RecordingFileHandler>();
+    OutstationTestObject t(OutstationConfig(), DatabaseConfig(), files);
+    t.LowerLayerUp();
+
+    t.SendToOutstation("C0 1C 46 07 5B 01 15 00 14 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 78");
+    REQUIRE(t.lower->PopWriteAsHex().substr(0, 23) == "C0 81 80 00 46 04 5B 01"); // NOT_EXIST
+    REQUIRE(files->described == std::vector<std::string>{"x"});
 }

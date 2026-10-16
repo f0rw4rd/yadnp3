@@ -119,7 +119,31 @@ IMasterTask::ResponseResult AuthenticateFileTask::ProcessResponse(const APDUResp
         return ResponseResult::OK_FINAL;
     }
 
-    // Parse Group70Var4 response
+    // the response is a Group70Var2 with the key, 0 if the outstation refused the credentials
+    if (objects.length() >= 3 && objects[0] == 70 && objects[1] == 2)
+    {
+        auto data = objects;
+        data.advance(3); // skip header
+
+        uint16_t dataLen = 0;
+        if (data.length() >= 3)
+        {
+            data.advance(1); // skip count
+            ser4cpp::LittleEndian::read(data, dataLen);
+        }
+        if (dataLen < 12 || data.length() < dataLen)
+        {
+            lastStatus = FileStatus::FATAL;
+            return ResponseResult::OK_FINAL;
+        }
+
+        data.advance(8); // user name and password offsets and sizes
+        ser4cpp::LittleEndian::read(data, authKey);
+        lastStatus = (authKey != 0) ? FileStatus::SUCCESS : FileStatus::PERMISSION_DENIED;
+        return ResponseResult::OK_FINAL;
+    }
+
+    // older versions of this library's outstation answer with a Group70Var4 carrying the key as its handle
     if (!objects.is_empty() && objects.length() >= 3 && objects[0] == 70 && objects[1] == 4)
     {
         auto data = objects;
