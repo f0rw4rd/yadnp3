@@ -150,6 +150,11 @@ public:
     void OnStart();
 
     /**
+     * Called once the request of a task that expects no response has been sent
+     */
+    void OnRequestSent(Timestamp now);
+
+    /**
      * Set the expiration time to minimum. The scheduler must also be informed
      */
     void SetMinExpiration();

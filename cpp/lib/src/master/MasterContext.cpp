@@ -630,6 +630,7 @@ MContext::TaskState MContext::ResumeActiveTask()
 
     // No response expected -- complete the task after transmit
     this->solSeq.Increment();
+    this->activeTask->OnRequestSent(Timestamp(this->executor->get_time()));
     this->CompleteActiveTask();
     return TaskState::IDLE;
 }

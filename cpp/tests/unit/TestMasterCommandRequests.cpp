@@ -22,6 +22,8 @@
 #include "utils/MasterTestFixture.h"
 #include "utils/MeasurementComparisons.h"
 
+#include <master/HeaderConversions.h>
+
 #include <ser4cpp/util/HexConversions.h>
 
 #include <app/APDUBuilders.h>
@@ -123,6 +125,23 @@ TEST_CASE(SUITE("Layer down while still scheduled"))
     t.context->OnLowerLayerDown();
     REQUIRE(queue.values.size() == 1);
     REQUIRE(TaskCompletion::FAILURE_NO_COMMS == queue.values.front().summary);
+}
+
+TEST_CASE(SUITE("Freeze without response completes once sent"))
+{
+    MasterTestFixture t(NoStartupTasks());
+    t.context->OnLowerLayerUp();
+
+    t.context->Freeze(FreezeType::ImmediateFreezeNR, ConvertToLambda({Header::AllObjects(20, 0)}));
+    t.exe->run_many();
+
+    REQUIRE(t.lower->PopWriteAsHex() == "C0 08 14 00 06");
+    t.context->OnTxReady();
+    t.exe->run_many();
+
+    REQUIRE(t.application->taskStartEvents.size() == 1);
+    REQUIRE(t.application->taskCompletionEvents.size() == 1);
+    REQUIRE(t.application->taskCompletionEvents.front().result == TaskCompletion::SUCCESS);
 }
 
 TEST_CASE(SUITE("SelectAndOperate"))

@@ -147,6 +147,11 @@ void IMasterTask::OnMessageFormatError(Timestamp now)
     this->CompleteTask(TaskCompletion::FAILURE_MESSAGE_FORMAT_ERROR, now);
 }
 
+void IMasterTask::OnRequestSent(Timestamp now)
+{
+    this->CompleteTask(TaskCompletion::SUCCESS, now);
+}
+
 void IMasterTask::OnStart()
 {
     if (config.pCallback)
