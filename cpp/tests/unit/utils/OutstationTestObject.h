@@ -40,7 +40,8 @@ class OutstationTestObject
 
 public:
     OutstationTestObject(const opendnp3::OutstationConfig& config,
-                         const opendnp3::DatabaseConfig& db_config = opendnp3::DatabaseConfig());
+                         const opendnp3::DatabaseConfig& db_config = opendnp3::DatabaseConfig(),
+                         std::shared_ptr<opendnp3::IFileHandler> file_handler = nullptr);
 
     size_t SendToOutstation(const std::string& hex);
 

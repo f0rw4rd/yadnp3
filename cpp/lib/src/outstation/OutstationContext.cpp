@@ -938,6 +938,21 @@ bool OContext::IsFileReadRequest(const ser4cpp::rseq_t& objects)
     return false;
 }
 
+// A string field of a free-format g70 object: offset is from the start of the object's data, and the field must lie
+// within the object, after its fixed fields
+static bool ReadObjectString(
+    const ser4cpp::rseq_t& object, uint16_t offset, uint16_t length, size_t fixedLength, std::string& out)
+{
+    if (offset < fixedLength || static_cast<size_t>(offset) + length > object.length())
+    {
+        return false;
+    }
+    auto field = object;
+    field.advance(offset);
+    out.assign(reinterpret_cast<const char*>(static_cast<const uint8_t*>(field)), length);
+    return true;
+}
+
 IINField OContext::HandleFileRead(const ser4cpp::rseq_t& objects, HeaderWriter& writer)
 {
     if (!this->fileHandler)
@@ -988,8 +1003,12 @@ IINField OContext::HandleFileRead(const ser4cpp::rseq_t& objects, HeaderWriter& 
         return IINField::Empty();
     }
 
-    this->WriteGroup70Var5Response(writer, fileHandle, blockNum, result.lastBlock, result.data.data(),
-                                   result.data.size());
+    if (!this->WriteGroup70Var5Response(writer, fileHandle, blockNum, result.lastBlock, result.data.data(),
+                                        result.data.size()))
+    {
+        // the block is larger than a response holds
+        this->WriteGroup70Var6Response(writer, fileHandle, blockNum, FileStatus::BUFFER_OVERFLOW);
+    }
     return IINField::Empty();
 }
 
@@ -1026,10 +1045,16 @@ IINField OContext::HandleOpenFile(const ser4cpp::rseq_t& objects, HeaderWriter& 
     if (data.length() < dataLen || dataLen < 26)
         return IINField(IINBit::PARAM_ERROR);
 
+    const auto object = data.take(dataLen);
+
     uint16_t fileNameOffset = 0;
     uint16_t fileNameLength = 0;
     ser4cpp::LittleEndian::read(data, fileNameOffset);
     ser4cpp::LittleEndian::read(data, fileNameLength);
+
+    std::string filename;
+    if (!ReadObjectString(object, fileNameOffset, fileNameLength, 26, filename))
+        return IINField(IINBit::PARAM_ERROR);
 
     // time_of_creation: 6 bytes
     data.advance(6);
@@ -1047,14 +1072,6 @@ IINField OContext::HandleOpenFile(const ser4cpp::rseq_t& objects, HeaderWriter& 
     ser4cpp::LittleEndian::read(data, mode);
     ser4cpp::LittleEndian::read(data, maxBlockSize);
     ser4cpp::LittleEndian::read(data, requestId);
-
-    // Extract filename
-    std::string filename;
-    const auto nameLen = std::min(static_cast<size_t>(fileNameLength), data.length());
-    if (nameLen > 0)
-    {
-        filename.assign(reinterpret_cast<const char*>(static_cast<const uint8_t*>(data)), nameLen);
-    }
 
     // Cap the requested block size so that a Group70Var5 response fits in
     // the outstation's maximum TX fragment.  Overhead: 4 (APDU header + IIN)
@@ -1177,20 +1194,13 @@ IINField OContext::HandleDeleteFile(const ser4cpp::rseq_t& objects, HeaderWriter
         if (dataLen < 26)
             return IINField(IINBit::PARAM_ERROR);
 
+        const auto object = data.take(dataLen);
         uint16_t fileNameOffset = 0;
         uint16_t fileNameLength = 0;
         ser4cpp::LittleEndian::read(data, fileNameOffset);
         ser4cpp::LittleEndian::read(data, fileNameLength);
-        data.advance(dataLen - 4); // skip rest of fixed fields
-        // filename is at the end after fixed fields
-        // Recalculate: go back to beginning of this object's data
-        // Actually, the data pointer already advanced past the 2-byte length prefix
-        // So let's re-parse from the object start
-        auto objData = objects;
-        objData.advance(3 + 1 + 2); // header + count + length
-        objData.advance(fileNameOffset);
-        const auto nameLen = std::min(static_cast<size_t>(fileNameLength), objData.length());
-        filename.assign(reinterpret_cast<const char*>(static_cast<const uint8_t*>(objData)), nameLen);
+        if (!ReadObjectString(object, fileNameOffset, fileNameLength, 26, filename))
+            return IINField(IINBit::PARAM_ERROR);
     }
 
     auto status = this->fileHandler->DeleteFile(filename);
@@ -1279,6 +1289,8 @@ IINField OContext::HandleAuthenticateFile(const ser4cpp::rseq_t& objects, Header
     if (data.length() < dataLen || dataLen < 12)
         return IINField(IINBit::PARAM_ERROR);
 
+    const auto object = data.take(dataLen);
+
     uint16_t userNameOffset = 0;
     uint16_t userNameLength = 0;
     uint16_t passwordOffset = 0;
@@ -1294,15 +1306,9 @@ IINField OContext::HandleAuthenticateFile(const ser4cpp::rseq_t& objects, Header
     std::string username;
     std::string password;
 
-    if (userNameLength > 0 && data.length() >= userNameLength)
-    {
-        username.assign(reinterpret_cast<const char*>(static_cast<const uint8_t*>(data)), userNameLength);
-        data.advance(userNameLength);
-    }
-    if (passwordLength > 0 && data.length() >= passwordLength)
-    {
-        password.assign(reinterpret_cast<const char*>(static_cast<const uint8_t*>(data)), passwordLength);
-    }
+    if (!ReadObjectString(object, userNameOffset, userNameLength, 12, username)
+        || !ReadObjectString(object, passwordOffset, passwordLength, 12, password))
+        return IINField(IINBit::PARAM_ERROR);
 
     auto result = this->fileHandler->AuthenticateFile(username, password);
 
@@ -1460,6 +1466,8 @@ bool OContext::WriteGroup70Var5Response(
     HeaderWriter& writer, uint32_t fileHandle, uint32_t blockNum, bool lastBlock, const uint8_t* data, size_t dataLen)
 {
     // Group70Var5: file_handle(u32), block_number(u32), file_data(variable)
+    if (dataLen > 0xFFFF - 8)
+        return false;
     const uint16_t objDataLen = static_cast<uint16_t>(8 + dataLen);
     const size_t totalLen = 3 + 1 + 2 + objDataLen;
 
@@ -1532,8 +1540,10 @@ bool OContext::WriteGroup70Var7Response(HeaderWriter& writer, const FileInfo& in
     // Group70Var7: file_name_offset(u16), file_name_length(u16),
     //             file_type(u16), file_size(u32), time_of_creation(6 bytes),
     //             permissions(u16), request_id(u16), file_name(variable)
-    const uint16_t fileNameLen = static_cast<uint16_t>(info.fileName.size());
     const uint16_t fixedLen = 20; // 2+2+2+4+6+2+2
+    if (info.fileName.size() > 0xFFFFu - fixedLen)
+        return false;
+    const uint16_t fileNameLen = static_cast<uint16_t>(info.fileName.size());
     const uint16_t dataLen = fixedLen + fileNameLen;
     const size_t totalLen = 3 + 1 + 2 + dataLen;
 
