@@ -49,6 +49,7 @@ public:
     IINField SelectRange(GroupVariation gv, const Range& range) override;
     IINField SelectIndices(GroupVariation gv, const ICollection<uint16_t>& indices) override;
     void Unselect() override;
+    bool HasPointsFor(GroupVariation gv) const override;
 
     // ------- IClassAssigner -------------
     Range AssignClassToAll(AssignClassType type, PointClass clazz) override;

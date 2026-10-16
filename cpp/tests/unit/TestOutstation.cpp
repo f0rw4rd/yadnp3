@@ -68,6 +68,61 @@ TEST_CASE(SUITE("ReadUnknownObject"))
     REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 02"); // IIN = device restart + unknown object
 }
 
+TEST_CASE(SUITE("Read of a static type without points sets IIN2.1"))
+{
+    OutstationConfig config;
+    OutstationTestObject t(config, configure::by_count_of::binary_input(1));
+    t.LowerLayerUp();
+
+    t.SendToOutstation("C0 01 1E 00 06"); // g30v0, all objects
+    REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 02");
+    t.OnTxReady();
+
+    t.SendToOutstation("C1 01 1E 01 06"); // g30v1, all objects
+    REQUIRE(t.lower->PopWriteAsHex() == "C1 81 80 02");
+    t.OnTxReady();
+
+    t.SendToOutstation("C2 01 1E 00 00 00 03"); // g30v0, start-stop 0 to 3
+    REQUIRE(t.lower->PopWriteAsHex() == "C2 81 80 02");
+    t.OnTxReady();
+
+    t.SendToOutstation("C3 01 1E 00 17 01 02"); // g30v0, index 2
+    REQUIRE(t.lower->PopWriteAsHex() == "C3 81 80 02");
+}
+
+TEST_CASE(SUITE("Read of an event type without points sets IIN2.1"))
+{
+    OutstationConfig config;
+    OutstationTestObject t(config, configure::by_count_of::binary_input(1));
+    t.LowerLayerUp();
+
+    t.SendToOutstation("C0 01 20 00 06"); // g32v0, all objects
+    REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 02");
+    t.OnTxReady();
+
+    t.SendToOutstation("C1 01 20 00 07 05"); // g32v0, count of 5
+    REQUIRE(t.lower->PopWriteAsHex() == "C1 81 80 02");
+    t.OnTxReady();
+
+    // with points but no events, a null response
+    t.SendToOutstation("C2 01 02 00 06"); // g2v0, all objects
+    REQUIRE(t.lower->PopWriteAsHex() == "C2 81 80 00");
+}
+
+TEST_CASE(SUITE("Read of a group the outstation doesn't report sets IIN2.1"))
+{
+    OutstationConfig config;
+    OutstationTestObject t(config);
+    t.LowerLayerUp();
+
+    t.SendToOutstation("C0 01 22 00 06"); // g34v0 (analog input deadbands)
+    REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 02");
+    t.OnTxReady();
+
+    t.SendToOutstation("C1 01 00 FE 06"); // g0v254 (all device attributes)
+    REQUIRE(t.lower->PopWriteAsHex() == "C1 81 80 02");
+}
+
 TEST_CASE(SUITE("ColdRestart"))
 {
     OutstationConfig config;

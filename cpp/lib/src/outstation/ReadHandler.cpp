@@ -34,6 +34,8 @@ IINField ReadHandler::ProcessHeader(const AllObjectsHeader& header)
     case (GroupVariationType::STATIC):
         return pStaticSelector->SelectAll(header.enumeration);
     case (GroupVariationType::EVENT):
+        if (!pStaticSelector->HasPointsFor(header.enumeration))
+            return IINField(IINBit::OBJECT_UNKNOWN);
         return pEventSelector->SelectAll(header.enumeration);
     default:
         return IINField(IINBit::FUNC_NOT_SUPPORTED);
@@ -47,6 +49,8 @@ IINField ReadHandler::ProcessHeader(const RangeHeader& header)
 
 IINField ReadHandler::ProcessHeader(const CountHeader& header)
 {
+    if (!pStaticSelector->HasPointsFor(header.enumeration))
+        return IINField(IINBit::OBJECT_UNKNOWN);
     return pEventSelector->SelectCount(header.enumeration, header.count);
 }
 

@@ -30,6 +30,8 @@ IINField select_indices(StaticDataMap<Spec>& map,
                         const ICollection<uint16_t>& indices,
                         typename Spec::static_variation_t variation)
 {
+    if (map.is_empty())
+        return IINField(IINBit::OBJECT_UNKNOWN);
     auto missing_index = false;
     auto select = [&](uint16_t index) {
         if (!map.select(index, variation))
@@ -44,6 +46,8 @@ IINField select_indices(StaticDataMap<Spec>& map,
 
 template<class Spec> IINField select_indices(StaticDataMap<Spec>& map, const ICollection<uint16_t>& indices)
 {
+    if (map.is_empty())
+        return IINField(IINBit::OBJECT_UNKNOWN);
     auto missing_index = false;
     auto select = [&](uint16_t index) {
         if (!map.select(index))
@@ -93,6 +97,41 @@ Database::Database(const DatabaseConfig& config,
       time_and_interval(config.time_and_interval),
       octet_string(config.octet_string)
 {
+}
+
+bool Database::HasPointsFor(GroupVariation gv) const
+{
+    switch (static_cast<uint16_t>(gv) >> 8)
+    {
+    case (1):
+    case (2):
+        return !this->binary_input.is_empty();
+    case (3):
+    case (4):
+        return !this->double_binary.is_empty();
+    case (10):
+    case (11):
+        return !this->binary_output_status.is_empty();
+    case (20):
+    case (22):
+        return !this->counter.is_empty();
+    case (21):
+    case (23):
+        return !this->frozen_counter.is_empty();
+    case (30):
+    case (32):
+        return !this->analog_input.is_empty();
+    case (40):
+    case (42):
+        return !this->analog_output_status.is_empty();
+    case (50):
+        return !this->time_and_interval.is_empty();
+    case (110):
+    case (111):
+        return !this->octet_string.is_empty();
+    default:
+        return true;
+    }
 }
 
 IINField Database::SelectAll(GroupVariation gv)
@@ -195,7 +234,8 @@ IINField Database::SelectAll(GroupVariation gv)
         return select_all<OctetStringSpec>(this->octet_string);
 
     default:
-        return IINField(IINBit::FUNC_NOT_SUPPORTED);
+        // READ is supported, the object isn't
+        return IINField(IINBit::OBJECT_UNKNOWN);
     }
 }
 
@@ -285,7 +325,8 @@ IINField Database::SelectRange(GroupVariation gv, const Range& range)
         return select_range<OctetStringSpec>(this->octet_string, range, StaticOctetStringVariation::Group110Var0);
 
     default:
-        return IINField(IINBit::FUNC_NOT_SUPPORTED);
+        // READ is supported, the object isn't
+        return IINField(IINBit::OBJECT_UNKNOWN);
     }
 }
 
@@ -369,7 +410,8 @@ IINField Database::SelectIndices(GroupVariation gv, const ICollection<uint16_t>&
         return select_indices(this->octet_string, indices, StaticOctetStringVariation::Group110Var0);
 
     default:
-        return IINField(IINBit::FUNC_NOT_SUPPORTED);
+        // READ is supported, the object isn't
+        return IINField(IINBit::OBJECT_UNKNOWN);
     }
 }
 
@@ -550,6 +592,8 @@ template<class Spec> void Database::select_all_class_zero(StaticDataMap<Spec>& m
 
 template<class Spec> IINField Database::select_all(StaticDataMap<Spec>& map)
 {
+    if (map.is_empty())
+        return IINField(IINBit::OBJECT_UNKNOWN);
     map.select_all();
     return IINField::Empty();
 }
@@ -557,12 +601,16 @@ template<class Spec> IINField Database::select_all(StaticDataMap<Spec>& map)
 template<class Spec>
 IINField Database::select_all(StaticDataMap<Spec>& map, typename Spec::static_variation_t variation)
 {
+    if (map.is_empty())
+        return IINField(IINBit::OBJECT_UNKNOWN);
     map.select_all(variation);
     return IINField::Empty();
 }
 
 template<class Spec> IINField Database::select_range(StaticDataMap<Spec>& map, const Range& range)
 {
+    if (map.is_empty())
+        return IINField(IINBit::OBJECT_UNKNOWN);
     const auto count = map.select(range);
     return (count != range.Count()) ? IINField(IINBit::PARAM_ERROR) : IINField::Empty();
 }
@@ -572,6 +620,8 @@ IINField Database::select_range(StaticDataMap<Spec>& map,
                                 const Range& range,
                                 typename Spec::static_variation_t variation)
 {
+    if (map.is_empty())
+        return IINField(IINBit::OBJECT_UNKNOWN);
     const auto count = map.select(range, variation);
     return (count != range.Count()) ? IINField(IINBit::PARAM_ERROR) : IINField::Empty();
 }

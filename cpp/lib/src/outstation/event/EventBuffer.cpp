@@ -181,7 +181,8 @@ IINField EventBuffer::SelectMaxCount(GroupVariation gv, uint32_t maximum)
         return this->SelectByType(maximum, EventOctetStringVariation::Group111Var0);
 
     default:
-        return IINBit::FUNC_NOT_SUPPORTED;
+        // READ is supported, the object isn't
+        return IINBit::OBJECT_UNKNOWN;
     }
 }
 

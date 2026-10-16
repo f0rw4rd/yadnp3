@@ -117,6 +117,11 @@ public:
 
     void clear_selection();
 
+    bool is_empty() const
+    {
+        return this->map.empty();
+    }
+
     bool has_any_selection() const
     {
         return this->selected.IsValid();

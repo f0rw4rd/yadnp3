@@ -39,6 +39,9 @@ public:
     virtual IINField SelectIndices(GroupVariation gv, const ICollection<uint16_t>& indices) = 0;
 
     virtual void Unselect() = 0;
+
+    // whether there are any points of the type a static or event object reports
+    virtual bool HasPointsFor(GroupVariation gv) const = 0;
 };
 
 } // namespace opendnp3
