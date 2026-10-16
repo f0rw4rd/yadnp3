@@ -49,7 +49,13 @@ private:
 
     IINField RecordClass(GroupVariation gv);
 
-    bool IsExpectingAssignment();
+    // whether a class header came before: it applies to every object header after it, up to the next class header
+    bool HasClass() const
+    {
+        return this->classHeader >= 0;
+    }
+
+    static bool IsClassHeader(GroupVariation gv);
 
     IINField ProcessAssignAll(AssignClassType type, PointClass clazz);
 

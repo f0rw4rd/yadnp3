@@ -120,3 +120,33 @@ TEST_CASE(SUITE("AcceptsMultipleAssignsmentPerMessage"))
     assignment = t.application->classAssignments.front();
     REQUIRE(assignment == std::make_tuple(AssignClassType::AnalogInput, PointClass::Class3, 0, 9));
 }
+
+TEST_CASE(SUITE("A class header applies to every object header that follows it"))
+{
+    OutstationTestObject t(OutstationConfig(), configure::by_count_of::binary_input(10));
+    t.application->supportsAssignClass = true;
+    t.LowerLayerUp();
+
+    // class 3: binaries 8 and 9, in two headers; class 2: binary 0
+    t.SendToOutstation("C0 16 3C 04 06 01 00 00 08 08 01 00 00 09 09 3C 03 06 01 00 00 00 00");
+    REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 00");
+
+    REQUIRE(t.application->classAssignments.size() == 3);
+    REQUIRE(t.application->classAssignments[0]
+            == std::make_tuple(AssignClassType::BinaryInput, PointClass::Class3, 8, 8));
+    REQUIRE(t.application->classAssignments[1]
+            == std::make_tuple(AssignClassType::BinaryInput, PointClass::Class3, 9, 9));
+    REQUIRE(t.application->classAssignments[2]
+            == std::make_tuple(AssignClassType::BinaryInput, PointClass::Class2, 0, 0));
+}
+
+TEST_CASE(SUITE("rejects with ParamError an object header before any class header"))
+{
+    OutstationTestObject t(OutstationConfig(), configure::by_count_of::binary_input(10));
+    t.application->supportsAssignClass = true;
+    t.LowerLayerUp();
+
+    t.SendToOutstation("C0 16 01 00 00 08 08");
+    REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 04");
+    REQUIRE(t.application->classAssignments.empty());
+}

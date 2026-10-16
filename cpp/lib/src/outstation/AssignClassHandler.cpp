@@ -34,7 +34,12 @@ AssignClassHandler::AssignClassHandler(IOutstationApplication& application, ICla
 
 IINField AssignClassHandler::ProcessHeader(const AllObjectsHeader& header)
 {
-    if (IsExpectingAssignment())
+    if (IsClassHeader(header.enumeration))
+    {
+        return this->RecordClass(header.enumeration);
+    }
+
+    if (HasClass())
     {
         switch (header.enumeration)
         {
@@ -58,13 +63,13 @@ IINField AssignClassHandler::ProcessHeader(const AllObjectsHeader& header)
     }
     else
     {
-        return this->RecordClass(header.enumeration);
+        return IINBit::PARAM_ERROR;
     }
 }
 
 IINField AssignClassHandler::ProcessHeader(const RangeHeader& header)
 {
-    if (IsExpectingAssignment())
+    if (HasClass())
     {
         switch (header.enumeration)
         {
@@ -93,17 +98,18 @@ IINField AssignClassHandler::ProcessHeader(const RangeHeader& header)
     }
 }
 
-bool AssignClassHandler::IsExpectingAssignment()
+bool AssignClassHandler::IsClassHeader(GroupVariation gv)
 {
-    auto current = static_cast<int32_t>(this->GetCurrentHeader());
-
-    if (current > 0 && ((current - 1) == this->classHeader))
+    switch (gv)
     {
-        this->classHeader = -1;
+    case (GroupVariation::Group60Var1):
+    case (GroupVariation::Group60Var2):
+    case (GroupVariation::Group60Var3):
+    case (GroupVariation::Group60Var4):
         return true;
+    default:
+        return false;
     }
-
-    return false;
 }
 
 IINField AssignClassHandler::ProcessAssignRange(AssignClassType type, PointClass clazz, const Range& range)
