@@ -48,11 +48,15 @@ Timestamp::Timestamp() : value(exe4cpp::steady_time_t::min()) {}
 
 Timestamp::Timestamp(exe4cpp::steady_time_t value) : value(value) {}
 
+// Each bound is computed so that it can't overflow: max() - value overflows for any value below zero, as for Min()
 Timestamp Timestamp::operator+(const TimeDuration& duration) const
 {
-    const auto maximum = exe4cpp::steady_time_t::max() - value;
-
-    return duration.value >= maximum ? Timestamp::Max() : Timestamp(value + duration.value);
+    const auto d = duration.value;
+    if (d >= exe4cpp::duration_t::zero())
+    {
+        return value >= exe4cpp::steady_time_t::max() - d ? Timestamp::Max() : Timestamp(value + d);
+    }
+    return value <= exe4cpp::steady_time_t::min() - d ? Timestamp::Min() : Timestamp(value + d);
 }
 
 Timestamp& Timestamp::operator+=(const TimeDuration& duration)
@@ -64,9 +68,12 @@ Timestamp& Timestamp::operator+=(const TimeDuration& duration)
 
 Timestamp Timestamp::operator-(const TimeDuration& duration) const
 {
-    const auto maximum = value - exe4cpp::steady_time_t::min();
-
-    return duration.value >= maximum ? Timestamp::Min() : Timestamp(value - duration.value);
+    const auto d = duration.value;
+    if (d >= exe4cpp::duration_t::zero())
+    {
+        return value <= exe4cpp::steady_time_t::min() + d ? Timestamp::Min() : Timestamp(value - d);
+    }
+    return value >= exe4cpp::steady_time_t::max() + d ? Timestamp::Max() : Timestamp(value - d);
 }
 
 Timestamp& Timestamp::operator-=(const TimeDuration& duration)
