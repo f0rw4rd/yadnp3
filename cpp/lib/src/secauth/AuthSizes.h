@@ -79,7 +79,13 @@ struct AuthSizes : StaticOnly
 
     static uint32_t GetBoundedChallengeSize(uint32_t size)
     {
-        return std::max(MIN_CHALLENGE_DATA_SIZE, std::min(size, MAX_CHALLENGE_DATA_SIZE));
+        // std::min/max bind by reference, which ODR-uses the in-class constants and
+        // leaves them undefined at link time in unoptimized C++14 builds
+        if (size < MIN_CHALLENGE_DATA_SIZE)
+        {
+            return MIN_CHALLENGE_DATA_SIZE;
+        }
+        return (size > MAX_CHALLENGE_DATA_SIZE) ? MAX_CHALLENGE_DATA_SIZE : size;
     }
 };
 
