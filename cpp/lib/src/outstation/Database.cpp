@@ -531,6 +531,13 @@ bool Database::Update(const AnalogOutputStatus& meas, uint16_t index, EventMode 
 
 bool Database::Update(const OctetString& meas, uint16_t index, EventMode mode)
 {
+    // the size of an octet string is the variation it's reported in, and g110v0 and g111v0 are only for requests:
+    // an empty string is reported as one zero octet
+    if (meas.Size() == 0)
+    {
+        const uint8_t zero = 0x00;
+        return this->octet_string.update(OctetString(Buffer(&zero, 1)), index, mode, event_receiver);
+    }
     return this->octet_string.update(meas, index, mode, event_receiver);
 }
 

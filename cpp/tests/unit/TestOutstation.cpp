@@ -408,6 +408,7 @@ TEST_CASE(SUITE("an empty octet string is reported as one zero octet, not as var
 TEST_CASE(SUITE("an octet string longer than 255 octets is cut to 255"))
 {
     const std::vector<uint8_t> data(300, 0xAA);
+    REQUIRE(OctetString(opendnp3::Buffer(nullptr, 0)).Size() == 0);
     REQUIRE(OctetString(opendnp3::Buffer(data.data(), 256)).Size() == 255);
     REQUIRE(OctetString(opendnp3::Buffer(data.data(), 300)).Size() == 255);
 }

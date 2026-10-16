@@ -33,10 +33,7 @@ OctetData::OctetData() : size(1) {}
 
 OctetData::OctetData(const char* input) : OctetData(ToSlice(input)) {}
 
-// an empty input is held as one zero octet: the size is the variation of g110/g111, and variation 0 only
-// appears in requests
-OctetData::OctetData(const Buffer& input)
-    : size(input.length == 0 ? 1 : static_cast<uint8_t>(std::min<size_t>(MAX_SIZE, input.length)))
+OctetData::OctetData(const Buffer& input) : size(static_cast<uint8_t>(std::min<size_t>(MAX_SIZE, input.length)))
 {
     if (input.length > 0)
     {
@@ -51,9 +48,8 @@ bool OctetData::Set(const Buffer& input)
     ser4cpp::rseq_t input_slice(input.data, input.length);
     if (input_slice.is_empty())
     {
-        this->size = 1;
-        this->buffer[0] = 0x00;
-        return false;
+        this->size = 0;
+        return true;
     }
 
     const bool is_oversized = input_slice.length() > MAX_SIZE;
