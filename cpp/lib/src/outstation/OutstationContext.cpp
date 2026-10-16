@@ -704,16 +704,16 @@ IINField OContext::HandleNonReadResponse(const APDUHeader& header, const ser4cpp
 
 ser4cpp::Pair<IINField, AppControlField> OContext::HandleRead(const ser4cpp::rseq_t& objects, HeaderWriter& writer)
 {
+    this->rspContext.Reset();
+    this->eventBuffer.Unselect(); // always un-select any previously selected points when we start a new read request
+    this->database.Unselect();
+
     // Check if this is a file block read (Group70Var5)
     if (this->IsFileReadRequest(objects))
     {
         auto iin = this->HandleFileRead(objects, writer);
         return ser4cpp::Pair<IINField, AppControlField>(iin, AppControlField(true, true, false, false));
     }
-
-    this->rspContext.Reset();
-    this->eventBuffer.Unselect(); // always un-select any previously selected points when we start a new read request
-    this->database.Unselect();
 
     ReadHandler handler(this->database, this->eventBuffer);
     auto result = APDUParser::Parse(objects, handler, &this->logger,
@@ -987,7 +987,8 @@ IINField OContext::HandleFileRead(const ser4cpp::rseq_t& objects, HeaderWriter& 
     uint16_t dataLen = 0;
     ser4cpp::LittleEndian::read(data, dataLen);
 
-    if (data.length() < dataLen || dataLen < 8)
+    // the block is the request's only object: anything after it would be silently ignored
+    if (data.length() != dataLen || dataLen < 8)
         return IINField(IINBit::PARAM_ERROR);
 
     uint32_t fileHandle = 0;
@@ -1420,7 +1421,8 @@ IINField OContext::HandleFileWrite(const ser4cpp::rseq_t& objects, HeaderWriter&
     uint16_t dataLen = 0;
     ser4cpp::LittleEndian::read(data, dataLen);
 
-    if (data.length() < dataLen || dataLen < 8)
+    // the block is the request's only object: anything after it would be silently ignored
+    if (data.length() != dataLen || dataLen < 8)
         return IINField(IINBit::PARAM_ERROR);
 
     uint32_t fileHandle = 0;

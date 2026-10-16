@@ -150,6 +150,20 @@ TEST_CASE(SUITE("READ of a block that doesn't fit answers with a status"))
     REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 00 46 06 5B 01 09 00 07 00 00 00 00 00 00 00 11");
 }
 
+TEST_CASE(SUITE("READ of a block with other headers after it is rejected, not partly ignored"))
+{
+    auto files = std::make_shared<RecordingFileHandler>();
+    OutstationTestObject t(OutstationConfig(), DatabaseConfig(), files);
+    t.LowerLayerUp();
+
+    t.SendToOutstation("C0 01 46 05 5B 01 08 00 07 00 00 00 00 00 00 00 3C 01 06"); // g70v5, then class 0
+    REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 04");
+    t.OnTxReady();
+
+    t.SendToOutstation("C1 02 46 05 5B 01 09 00 07 00 00 00 00 00 00 80 AA 50 01 00 07 07 00"); // then g80v1
+    REQUIRE(t.lower->PopWriteAsHex() == "C1 81 80 04");
+}
+
 TEST_CASE(SUITE("READ of a block answers with its data"))
 {
     auto files = std::make_shared<RecordingFileHandler>();
