@@ -4030,3 +4030,154 @@ class TestFileTransfer:
         r = result_holder[0]
         assert r.summary == opendnp3.TaskCompletion.SUCCESS
         assert r.statusCode == opendnp3.FileStatus.PERMISSION_DENIED
+
+
+# ---------------------------------------------------------------------------
+# Handlers the caller keeps no reference to
+# ---------------------------------------------------------------------------
+
+class CountingSOEHandler(opendnp3.ISOEHandler):
+    """SOE handler that counts into a list it doesn't own, so the test can see it after dropping the handler."""
+
+    def __init__(self, counts):
+        super().__init__()
+        self.counts = counts
+
+    def BeginFragment(self, info):
+        pass
+
+    def EndFragment(self, info):
+        pass
+
+    def Process(self, info, values):
+        self.counts.append(len(values))
+
+
+class TestHandlerLifetime:
+    """The stack keeps a Python handler, overrides and all, for as long as it uses it."""
+
+    def test_handlers_passed_without_a_reference(self, manager):
+        import gc
+
+        port = _alloc_port()
+        server = manager.AddTCPServer("lifetime-server", opendnp3.levels.NOTHING,
+                                      opendnp3.ServerAcceptMode.CloseExisting,
+                                      opendnp3.IPEndpoint("127.0.0.1", port), None)
+        ocfg = opendnp3.OutstationStackConfig(opendnp3.DatabaseConfig(3))
+        ocfg.link.LocalAddr = 1024
+        ocfg.link.RemoteAddr = 1
+        outstation = server.AddOutstation("lifetime-outstation", AcceptAllCommandHandler(),
+                                          SimpleOutstationApp(), ocfg)
+
+        client = manager.AddTCPClient("lifetime-client", opendnp3.levels.NOTHING, opendnp3.ChannelRetry.Default(),
+                                      [opendnp3.IPEndpoint("127.0.0.1", port)], "0.0.0.0", None)
+        mcfg = opendnp3.MasterStackConfig()
+        mcfg.master.disableUnsolOnStartup = True
+        mcfg.link.LocalAddr = 1
+        mcfg.link.RemoteAddr = 1024
+        counts = []
+        master = client.AddMaster("lifetime-master", CountingSOEHandler(counts), SimpleMasterApp(), mcfg)
+        gc.collect()
+
+        outstation.Enable()
+        master.Enable()
+        deadline = time.time() + 5
+        while not counts and time.time() < deadline:
+            time.sleep(0.05)
+        assert sum(counts) > 0, "the SOE handler passed without a reference got nothing"
+
+        # a scan's handler, too
+        scan_counts = []
+        master.ScanClasses(opendnp3.ClassField.AllClasses(), CountingSOEHandler(scan_counts))
+        gc.collect()
+        deadline = time.time() + 5
+        while not scan_counts and time.time() < deadline:
+            time.sleep(0.05)
+        assert sum(scan_counts) > 0, "the scan's SOE handler passed without a reference got nothing"
+
+        master.Shutdown()
+        outstation.Shutdown()
+
+
+# ---------------------------------------------------------------------------
+# Calls that wait on the stack while ASIO threads call into Python
+# ---------------------------------------------------------------------------
+
+_DELETE_MANAGER = """
+import time
+import opendnp3
+
+class Log(opendnp3.ILogHandler):
+    def log(self, module, id, level, location, message):
+        time.sleep(0.001)
+
+class Listener(opendnp3.IChannelListener):
+    def OnStateChange(self, state):
+        time.sleep(0.05)
+
+mgr = opendnp3.DNP3Manager(2, Log())
+listeners = [Listener() for _ in range(8)]
+for i, listener in enumerate(listeners):
+    # nothing listens on port 1, so the clients keep retrying, and logging
+    mgr.AddTCPClient("c%d" % i, opendnp3.levels.ALL, opendnp3.ChannelRetry.Default(),
+                     [opendnp3.IPEndpoint("127.0.0.1", 1)], "0.0.0.0", listener)
+time.sleep(0.5)
+del mgr
+print("deleted")
+"""
+
+_GET_LOG_FILTERS = """
+import time
+import opendnp3
+
+class Log(opendnp3.ILogHandler):
+    def log(self, module, id, level, location, message):
+        sum(range(2000))
+
+class Listener(opendnp3.IChannelListener):
+    def OnStateChange(self, state):
+        sum(range(20000))
+
+mgr = opendnp3.DNP3Manager(1, Log())
+retry = opendnp3.ChannelRetry(opendnp3.TimeDuration.Milliseconds(1), opendnp3.TimeDuration.Milliseconds(1))
+ch = mgr.AddTCPClient("c", opendnp3.levels.ALL, retry, [opendnp3.IPEndpoint("127.0.0.1", 1)], "0.0.0.0", Listener())
+
+class SOE(opendnp3.ISOEHandler):
+    def BeginFragment(self, info):
+        pass
+    def EndFragment(self, info):
+        pass
+    def Process(self, info, values):
+        pass
+
+class App(opendnp3.IMasterApplication):
+    pass
+
+soe, app = SOE(), App()
+master = ch.AddMaster("m", soe, app, opendnp3.MasterStackConfig())
+master.Enable()
+time.sleep(0.2)
+for _ in range(20000):
+    ch.GetLogFilters()
+mgr.Shutdown()
+print("done")
+"""
+
+
+def _run_isolated(code):
+    import subprocess
+    import sys as _sys
+
+    try:
+        result = subprocess.run([_sys.executable, "-c", code], capture_output=True, text=True, timeout=30)
+    except subprocess.TimeoutExpired:
+        pytest.fail("deadlocked: still running after 30 s")
+    assert result.returncode == 0, result.stderr
+
+
+class TestNoDeadlock:
+    def test_deleting_the_manager_while_callbacks_run(self):
+        _run_isolated(_DELETE_MANAGER)
+
+    def test_get_log_filters_while_callbacks_run(self):
+        _run_isolated(_GET_LOG_FILTERS)

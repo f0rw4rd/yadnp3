@@ -18,6 +18,8 @@
  * limitations under the License.
  */
 
+#include "gil_safe.h"
+
 #include "opendnp3/app/AnalogCommandEvent.h"
 #include "opendnp3/app/BinaryCommandEvent.h"
 #include "opendnp3/app/DeviceAttributes.h"
@@ -88,7 +90,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(void, ISOEHandler, BeginFragment, info);
+            YADNP3_OVERRIDE_PURE(void, ISOEHandler, BeginFragment, info);
         }
         catch (py::error_already_set& e)
         {
@@ -104,7 +106,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(void, ISOEHandler, EndFragment, info);
+            YADNP3_OVERRIDE_PURE(void, ISOEHandler, EndFragment, info);
         }
         catch (py::error_already_set& e)
         {
@@ -525,7 +527,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(UTCTimestamp, IMasterApplication, Now);
+            YADNP3_OVERRIDE_PURE(UTCTimestamp, IMasterApplication, Now);
         }
         catch (py::error_already_set& e)
         {
@@ -603,15 +605,35 @@ void init_master(py::module_& m)
         .def("Disable", &IMaster::Disable, py::call_guard<py::gil_scoped_release>())
         .def("Shutdown", &IMaster::Shutdown, py::call_guard<py::gil_scoped_release>())
         .def("SetLogFilters", &IMaster::SetLogFilters, py::arg("filters"))
-        .def("Scan", &IMaster::Scan, py::arg("headers"), py::arg("soe_handler"),
-             py::arg("config") = TaskConfig::Default(), "Initiate a one-shot scan using custom headers",
-             py::call_guard<py::gil_scoped_release>())
-        .def("ScanClasses", &IMaster::ScanClasses, py::arg("field"), py::arg("soe_handler"),
-             py::arg("config") = TaskConfig::Default(), "Initiate a one-shot class-based scan",
-             py::call_guard<py::gil_scoped_release>())
-        .def("AddClassScan", &IMaster::AddClassScan, py::arg("field"), py::arg("period"), py::arg("soe_handler"),
-             py::arg("config") = TaskConfig::Default(), "Add a recurring class scan",
-             py::call_guard<py::gil_scoped_release>())
+        .def(
+            "Scan",
+            [](IMaster& self, const std::vector<Header>& headers, std::shared_ptr<ISOEHandler> soe,
+               const TaskConfig& config) {
+                auto safe_soe = gil_safe_shared(std::move(soe));
+                py::gil_scoped_release release;
+                self.Scan(headers, safe_soe, config);
+            },
+            py::arg("headers"), py::arg("soe_handler"), py::arg("config") = TaskConfig::Default(),
+            "Initiate a one-shot scan using custom headers")
+        .def(
+            "ScanClasses",
+            [](IMaster& self, const ClassField& field, std::shared_ptr<ISOEHandler> soe, const TaskConfig& config) {
+                auto safe_soe = gil_safe_shared(std::move(soe));
+                py::gil_scoped_release release;
+                self.ScanClasses(field, safe_soe, config);
+            },
+            py::arg("field"), py::arg("soe_handler"), py::arg("config") = TaskConfig::Default(),
+            "Initiate a one-shot class-based scan")
+        .def(
+            "AddClassScan",
+            [](IMaster& self, const ClassField& field, TimeDuration period, std::shared_ptr<ISOEHandler> soe,
+               const TaskConfig& config) {
+                auto safe_soe = gil_safe_shared(std::move(soe));
+                py::gil_scoped_release release;
+                return self.AddClassScan(field, period, safe_soe, config);
+            },
+            py::arg("field"), py::arg("period"), py::arg("soe_handler"), py::arg("config") = TaskConfig::Default(),
+            "Add a recurring class scan")
         .def("Write", &IMaster::Write, py::arg("value"), py::arg("index"), py::arg("config") = TaskConfig::Default(),
              py::call_guard<py::gil_scoped_release>())
         .def("Restart", &IMaster::Restart, py::arg("op"), py::arg("callback"),
@@ -620,21 +642,55 @@ void init_master(py::module_& m)
              py::arg("config") = TaskConfig::Default(), py::call_guard<py::gil_scoped_release>())
         .def("Freeze", &IMaster::Freeze, py::arg("type"), py::arg("headers"), py::arg("config") = TaskConfig::Default(),
              "Issue a freeze request to the outstation", py::call_guard<py::gil_scoped_release>())
-        .def("AddScan", &IMaster::AddScan, py::arg("period"), py::arg("headers"), py::arg("soe_handler"),
-             py::arg("config") = TaskConfig::Default(), "Add a recurring user-defined scan from a vector of headers",
-             py::call_guard<py::gil_scoped_release>())
-        .def("AddAllObjectsScan", &IMaster::AddAllObjectsScan, py::arg("gvId"), py::arg("period"),
-             py::arg("soe_handler"), py::arg("config") = TaskConfig::Default(),
-             "Add a recurring all-objects scan for a group/variation", py::call_guard<py::gil_scoped_release>())
-        .def("AddRangeScan", &IMaster::AddRangeScan, py::arg("gvId"), py::arg("start"), py::arg("stop"),
-             py::arg("period"), py::arg("soe_handler"), py::arg("config") = TaskConfig::Default(),
-             "Add a recurring range-based scan", py::call_guard<py::gil_scoped_release>())
-        .def("ScanAllObjects", &IMaster::ScanAllObjects, py::arg("gvId"), py::arg("soe_handler"),
-             py::arg("config") = TaskConfig::Default(), "Initiate a single all-objects scan for a group/variation",
-             py::call_guard<py::gil_scoped_release>())
-        .def("ScanRange", &IMaster::ScanRange, py::arg("gvId"), py::arg("start"), py::arg("stop"),
-             py::arg("soe_handler"), py::arg("config") = TaskConfig::Default(), "Initiate a single range-based scan",
-             py::call_guard<py::gil_scoped_release>())
+        .def(
+            "AddScan",
+            [](IMaster& self, TimeDuration period, const std::vector<Header>& headers,
+               std::shared_ptr<ISOEHandler> soe, const TaskConfig& config) {
+                auto safe_soe = gil_safe_shared(std::move(soe));
+                py::gil_scoped_release release;
+                return self.AddScan(period, headers, safe_soe, config);
+            },
+            py::arg("period"), py::arg("headers"), py::arg("soe_handler"), py::arg("config") = TaskConfig::Default(),
+            "Add a recurring user-defined scan from a vector of headers")
+        .def(
+            "AddAllObjectsScan",
+            [](IMaster& self, GroupVariationID gvId, TimeDuration period, std::shared_ptr<ISOEHandler> soe,
+               const TaskConfig& config) {
+                auto safe_soe = gil_safe_shared(std::move(soe));
+                py::gil_scoped_release release;
+                return self.AddAllObjectsScan(gvId, period, safe_soe, config);
+            },
+            py::arg("gvId"), py::arg("period"), py::arg("soe_handler"), py::arg("config") = TaskConfig::Default(),
+            "Add a recurring all-objects scan for a group/variation")
+        .def(
+            "AddRangeScan",
+            [](IMaster& self, GroupVariationID gvId, uint16_t start, uint16_t stop, TimeDuration period,
+               std::shared_ptr<ISOEHandler> soe, const TaskConfig& config) {
+                auto safe_soe = gil_safe_shared(std::move(soe));
+                py::gil_scoped_release release;
+                return self.AddRangeScan(gvId, start, stop, period, safe_soe, config);
+            },
+            py::arg("gvId"), py::arg("start"), py::arg("stop"), py::arg("period"), py::arg("soe_handler"),
+            py::arg("config") = TaskConfig::Default(), "Add a recurring range-based scan")
+        .def(
+            "ScanAllObjects",
+            [](IMaster& self, GroupVariationID gvId, std::shared_ptr<ISOEHandler> soe, const TaskConfig& config) {
+                auto safe_soe = gil_safe_shared(std::move(soe));
+                py::gil_scoped_release release;
+                self.ScanAllObjects(gvId, safe_soe, config);
+            },
+            py::arg("gvId"), py::arg("soe_handler"), py::arg("config") = TaskConfig::Default(),
+            "Initiate a single all-objects scan for a group/variation")
+        .def(
+            "ScanRange",
+            [](IMaster& self, GroupVariationID gvId, uint16_t start, uint16_t stop, std::shared_ptr<ISOEHandler> soe,
+               const TaskConfig& config) {
+                auto safe_soe = gil_safe_shared(std::move(soe));
+                py::gil_scoped_release release;
+                self.ScanRange(gvId, start, stop, safe_soe, config);
+            },
+            py::arg("gvId"), py::arg("start"), py::arg("stop"), py::arg("soe_handler"),
+            py::arg("config") = TaskConfig::Default(), "Initiate a single range-based scan")
         .def(
             "SelectAndOperate",
             [](IMaster& self, const ControlRelayOutputBlock& command, uint16_t index, py::function callback,

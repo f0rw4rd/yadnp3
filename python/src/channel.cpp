@@ -25,6 +25,8 @@
 #include "opendnp3/logging/ILogHandler.h"
 #include "opendnp3/outstation/IFileHandler.h"
 
+#include "gil_safe.h"
+
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -44,7 +46,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(void, ILogHandler, log, module, id, level, location, message);
+            YADNP3_OVERRIDE_PURE(void, ILogHandler, log, module, id, level, location, message);
         }
         catch (py::error_already_set& e)
         {
@@ -67,7 +69,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(void, IChannelListener, OnStateChange, state);
+            YADNP3_OVERRIDE_PURE(void, IChannelListener, OnStateChange, state);
         }
         catch (py::error_already_set& e)
         {
@@ -79,23 +81,6 @@ public:
         }
     }
 };
-
-// Wrap a pybind11-managed shared_ptr so that when C++ releases its last
-// reference (e.g. during Shutdown on an ASIO thread), the Python ref-decrement
-// happens with the GIL held.
-template<typename T> std::shared_ptr<T> gil_safe_shared(std::shared_ptr<T> ptr)
-{
-    if (!ptr)
-        return ptr;
-    auto prevent_release = std::make_shared<std::shared_ptr<T>>(std::move(ptr));
-    return std::shared_ptr<T>(prevent_release->get(), [prevent_release](T*) mutable {
-        if (Py_IsInitialized())
-        {
-            py::gil_scoped_acquire gil;
-            prevent_release.reset();
-        }
-    });
-}
 
 void init_channel(py::module_& m)
 {
@@ -120,7 +105,7 @@ void init_channel(py::module_& m)
 
     // IChannel
     py::class_<IChannel, std::shared_ptr<IChannel>>(m, "IChannel", "Communication channel")
-        .def("GetLogFilters", &IChannel::GetLogFilters)
+        .def("GetLogFilters", &IChannel::GetLogFilters, py::call_guard<py::gil_scoped_release>())
         .def("SetLogFilters", &IChannel::SetLogFilters, py::arg("filters"))
         .def(
             "AddMaster",
@@ -195,7 +180,9 @@ void init_channel(py::module_& m)
             "Optional callback(preverified: bool, depth: int, subject: str, cert_der: bytes) -> bool");
 
     // DNP3Manager
-    py::class_<DNP3Manager>(m, "DNP3Manager", "Root DNP3 object used to create channels and sessions")
+    // the destructor shuts the manager down and joins its threads, which may be waiting for the GIL
+    py::class_<DNP3Manager, std::unique_ptr<DNP3Manager, GilReleasingDeleter<DNP3Manager>>>(
+        m, "DNP3Manager", "Root DNP3 object used to create channels and sessions")
         .def(py::init([](uint32_t concurrencyHint, std::shared_ptr<ILogHandler> handler) {
                  return new DNP3Manager(concurrencyHint, gil_safe_shared(std::move(handler)));
              }),

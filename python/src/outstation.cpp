@@ -18,6 +18,8 @@
  * limitations under the License.
  */
 
+#include "gil_safe.h"
+
 #include "opendnp3/outstation/ICommandHandler.h"
 #include "opendnp3/outstation/IFileHandler.h"
 #include "opendnp3/outstation/IOutstation.h"
@@ -42,7 +44,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(void, ICommandHandler, Begin);
+            YADNP3_OVERRIDE_PURE(void, ICommandHandler, Begin);
         }
         catch (py::error_already_set& e)
         {
@@ -58,7 +60,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(void, ICommandHandler, End);
+            YADNP3_OVERRIDE_PURE(void, ICommandHandler, End);
         }
         catch (py::error_already_set& e)
         {
@@ -74,7 +76,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(CommandStatus, ICommandHandler, Select, command, index);
+            YADNP3_OVERRIDE_PURE(CommandStatus, ICommandHandler, Select, command, index);
         }
         catch (py::error_already_set& e)
         {
@@ -115,7 +117,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(CommandStatus, ICommandHandler, Select, command, index);
+            YADNP3_OVERRIDE_PURE(CommandStatus, ICommandHandler, Select, command, index);
         }
         catch (py::error_already_set& e)
         {
@@ -156,7 +158,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(CommandStatus, ICommandHandler, Select, command, index);
+            YADNP3_OVERRIDE_PURE(CommandStatus, ICommandHandler, Select, command, index);
         }
         catch (py::error_already_set& e)
         {
@@ -197,7 +199,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(CommandStatus, ICommandHandler, Select, command, index);
+            YADNP3_OVERRIDE_PURE(CommandStatus, ICommandHandler, Select, command, index);
         }
         catch (py::error_already_set& e)
         {
@@ -238,7 +240,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(CommandStatus, ICommandHandler, Select, command, index);
+            YADNP3_OVERRIDE_PURE(CommandStatus, ICommandHandler, Select, command, index);
         }
         catch (py::error_already_set& e)
         {
@@ -496,7 +498,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(FileCommandResult, IFileHandler, GetFileInfo, filename);
+            YADNP3_OVERRIDE_PURE(FileCommandResult, IFileHandler, GetFileInfo, filename);
         }
         catch (py::error_already_set& e)
         {
@@ -518,7 +520,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(FileOpenResult, IFileHandler, OpenFile, filename, authKey, permissions, mode,
+            YADNP3_OVERRIDE_PURE(FileOpenResult, IFileHandler, OpenFile, filename, authKey, permissions, mode,
                                    maxBlockSize, requestId);
         }
         catch (py::error_already_set& e)
@@ -536,7 +538,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(FileBlockResult, IFileHandler, ReadBlock, fileHandle, blockNum);
+            YADNP3_OVERRIDE_PURE(FileBlockResult, IFileHandler, ReadBlock, fileHandle, blockNum);
         }
         catch (py::error_already_set& e)
         {
@@ -576,7 +578,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(FileStatus, IFileHandler, CloseFile, fileHandle, requestId);
+            YADNP3_OVERRIDE_PURE(FileStatus, IFileHandler, CloseFile, fileHandle, requestId);
         }
         catch (py::error_already_set& e)
         {
@@ -593,7 +595,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(FileStatus, IFileHandler, DeleteFile, filename);
+            YADNP3_OVERRIDE_PURE(FileStatus, IFileHandler, DeleteFile, filename);
         }
         catch (py::error_already_set& e)
         {
@@ -610,7 +612,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(void, IFileHandler, AbortFile, fileHandle);
+            YADNP3_OVERRIDE_PURE(void, IFileHandler, AbortFile, fileHandle);
         }
         catch (py::error_already_set& e)
         {
@@ -626,7 +628,7 @@ public:
     {
         try
         {
-            PYBIND11_OVERRIDE_PURE(FileAuthResult, IFileHandler, AuthenticateFile, username, password);
+            YADNP3_OVERRIDE_PURE(FileAuthResult, IFileHandler, AuthenticateFile, username, password);
         }
         catch (py::error_already_set& e)
         {
