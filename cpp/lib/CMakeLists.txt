@@ -859,6 +859,7 @@ target_link_libraries(opendnp3 PRIVATE
     $<BUILD_INTERFACE:ser4cpp>
     $<BUILD_INTERFACE:exe4cpp>
     $<BUILD_INTERFACE:asio>
+    OpenSSL::Crypto
     $<$<BOOL:${DNP3_TLS}>:OpenSSL::SSL>
 )
 target_include_directories(opendnp3

@@ -91,9 +91,8 @@ include(./deps/asio.cmake)
 include(./deps/exe4cpp.cmake)
 include(./deps/ser4cpp.cmake)
 
-if(DNP3_TLS)
-    find_package(OpenSSL 1.1.1 REQUIRED)
-endif()
+# the crypto behind Secure Authentication (cpp/lib/src/crypto) always uses OpenSSL's libcrypto; TLS needs libssl too
+find_package(OpenSSL 1.1.1 REQUIRED)
 
 if(DNP3_TESTS OR DNP3_FUZZING)
     include(./deps/catch.cmake)
