@@ -42,6 +42,7 @@ set(unittests_src
     ./TestMaster.cpp
     ./TestMasterAssignClass.cpp
     ./TestMasterCommandRequests.cpp
+    ./TestKeyWrap.cpp
     ./TestMasterFileTransfer.cpp
     ./TestOutstationFileTransfer.cpp
     ./TestMasterMultiCommandRequests.cpp

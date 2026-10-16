@@ -48,6 +48,12 @@ bool KeyWrapBuffer::Wrap(IKeyWrapAlgo& algo,
 
     // Build the data to wrap into a temporary buffer
     std::array<uint8_t, AuthSizes::MAX_SESSION_KEY_WRAP_BUFFER_SIZE> dataToWrap;
+    // the key status comes from the outstation, which decides its length
+    if (WRAPPED_DATA_SIZE_WITH_PADDING > dataToWrap.size())
+    {
+        SIMPLE_LOG_BLOCK(logger, flags::ERR, "Session keys and key status too large to wrap");
+        return false;
+    }
     ser4cpp::wseq_t dest(dataToWrap.data(), WRAPPED_DATA_SIZE_WITH_PADDING);
 
     // Write the key length
