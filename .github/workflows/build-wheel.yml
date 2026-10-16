@@ -16,6 +16,50 @@ permissions:
   contents: read
 
 jobs:
+  # the release gate: sanitized unit tests, fuzzing, dnp3c conformance and the Python tests (scripts/release-check.sh)
+  release-check:
+    name: Release check
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang libssl-dev maven openjdk-17-jdk-headless
+
+      - name: Restore the fuzz corpus of earlier runs
+        uses: actions/cache/restore@v4
+        with:
+          path: build-release-check/fuzz-corpus
+          key: fuzz-corpus-${{ github.run_id }}
+          restore-keys: fuzz-corpus-
+
+      - name: Run the release check
+        env:
+          FUZZ_SECONDS: 600
+        run: scripts/release-check.sh unit fuzz conformance python
+
+      - name: Save the fuzz corpus
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: build-release-check/fuzz-corpus
+          key: fuzz-corpus-${{ github.run_id }}
+
+      - name: Upload logs, reports and fuzz crashes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-check
+          path: |
+            build-release-check/*.log
+            build-release-check/fuzz-artifacts
+            conformance/results
+
   build-wheels:
     name: Build wheels (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -128,7 +172,7 @@ jobs:
 
   create-release:
     name: Create GitHub Release
-    needs: [build-wheels, build-sdist, test-wheels]
+    needs: [release-check, build-wheels, build-sdist, test-wheels]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -185,7 +229,7 @@ jobs:
 
   publish-pypi:
     name: Publish to PyPI
-    needs: [build-wheels, build-sdist, test-wheels]
+    needs: [release-check, build-wheels, build-sdist, test-wheels]
     runs-on: ubuntu-latest
     environment:
       name: pypi

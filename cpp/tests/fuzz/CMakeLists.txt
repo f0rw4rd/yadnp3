@@ -1,21 +1,45 @@
+# With DNP3_LIBFUZZER (clang), the targets link libFuzzer and fuzz; otherwise onefile.cpp gives them a main that runs
+# one input, for OSS-Fuzz style replay
+function(add_fuzzer name)
+    if(DNP3_LIBFUZZER)
+        add_executable(${name} ${ARGN})
+        target_compile_options(${name} PRIVATE -fsanitize=fuzzer)
+        target_link_options(${name} PRIVATE -fsanitize=fuzzer)
+    else()
+        add_executable(${name} ./onefile.cpp ${ARGN})
+    endif()
+    target_include_directories(${name} PRIVATE ./)
+    set_target_properties(${name} PROPERTIES FOLDER cpp/tests/fuzzing)
+    clang_format(${name})
+endfunction()
 
-add_executable (fuzzdecoder ./onefile.cpp ./fuzzdecoder.cpp)
-target_link_libraries (fuzzdecoder PRIVATE opendnp3)
-target_include_directories(fuzzdecoder PRIVATE ./)
-set_target_properties(fuzzdecoder PROPERTIES FOLDER cpp/tests/fuzzing)
-clang_format(fuzzdecoder)
+add_fuzzer(fuzzdecoder ./fuzzdecoder.cpp)
+target_link_libraries(fuzzdecoder PRIVATE opendnp3)
 clang_tidy(fuzzdecoder)
 
-add_executable (fuzzoutstation ./onefile.cpp ./fuzzoutstation.cpp)
-target_link_libraries (fuzzoutstation PRIVATE catch dnp3mocks)
-target_include_directories(fuzzoutstation PRIVATE ./)
-set_target_properties(fuzzoutstation PROPERTIES FOLDER cpp/tests/fuzzing)
-clang_format(fuzzoutstation)
+add_fuzzer(fuzzoutstation ./fuzzoutstation.cpp)
+target_link_libraries(fuzzoutstation PRIVATE catch dnp3mocks)
 clang_tidy(fuzzoutstation)
 
-add_executable (fuzzmaster ./onefile.cpp ./fuzzmaster.cpp)
-target_link_libraries (fuzzmaster PRIVATE catch dnp3mocks)
-target_include_directories(fuzzmaster PRIVATE ./)
-set_target_properties(fuzzmaster PROPERTIES FOLDER cpp/tests/fuzzing)
-clang_format(fuzzmaster)
+add_fuzzer(fuzzmaster ./fuzzmaster.cpp)
+target_link_libraries(fuzzmaster PRIVATE catch dnp3mocks)
 clang_tidy(fuzzmaster)
+
+# the session fuzzers drive a whole outstation or master through the unit test fixtures
+set(fuzz_test_utils
+    ../unit/utils/BufferHelpers.cpp
+    ../unit/utils/CopyableBuffer.cpp
+    ../unit/utils/MasterTestFixture.cpp
+    ../unit/utils/OutstationTestObject.cpp
+)
+
+add_fuzzer(fuzzdecoder_logging ./fuzzdecoder_logging.cpp)
+target_link_libraries(fuzzdecoder_logging PRIVATE opendnp3)
+
+add_fuzzer(fuzzoutstation_session ./fuzzoutstation_session.cpp ${fuzz_test_utils})
+target_include_directories(fuzzoutstation_session PRIVATE ../unit ../../lib/src)
+target_link_libraries(fuzzoutstation_session PRIVATE dnp3mocks)
+
+add_fuzzer(fuzzmaster_session ./fuzzmaster_session.cpp ${fuzz_test_utils})
+target_include_directories(fuzzmaster_session PRIVATE ../unit ../../lib/src)
+target_link_libraries(fuzzmaster_session PRIVATE dnp3mocks)
