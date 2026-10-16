@@ -120,5 +120,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
             t.exe->run_many();
         }
     }
+
+    // a pending response timer holds the context, and the mock executor never runs it: cancel it, or both leak
+    t.context->OnLowerLayerDown();
     return 0;
 }

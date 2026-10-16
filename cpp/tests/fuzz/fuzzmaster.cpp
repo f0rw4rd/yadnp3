@@ -49,6 +49,8 @@ public:
 
     ~MasterTestObject()
     {
+        // a pending response timer holds the context, and the mock executor never runs it: cancel it, or both leak
+        this->context->OnLowerLayerDown();
         this->scheduler->Shutdown();
     }
 
