@@ -123,6 +123,20 @@ TEST_CASE(SUITE("Read of a group the outstation doesn't report sets IIN2.1"))
     REQUIRE(t.lower->PopWriteAsHex() == "C1 81 80 02");
 }
 
+TEST_CASE(SUITE("Static objects are reported in the order requested"))
+{
+    OutstationConfig config;
+    OutstationTestObject t(config, configure::database_by_sizes(1, 0, 0, 1, 0, 0, 0, 0, 0));
+    t.LowerLayerUp();
+
+    t.SendToOutstation("C0 01 14 01 06 01 02 06"); // g20v1, then g1v2
+    REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 00 14 01 00 00 00 02 00 00 00 00 01 02 00 00 00 02");
+    t.OnTxReady();
+
+    t.SendToOutstation("C1 01 01 02 06 14 01 06"); // g1v2, then g20v1
+    REQUIRE(t.lower->PopWriteAsHex() == "C1 81 80 00 01 02 00 00 00 02 14 01 00 00 00 02 00 00 00 00");
+}
+
 TEST_CASE(SUITE("ColdRestart"))
 {
     OutstationConfig config;

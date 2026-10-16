@@ -33,6 +33,8 @@
 #include "opendnp3/outstation/IUpdateHandler.h"
 #include "opendnp3/outstation/StaticTypeBitfield.h"
 
+#include <array>
+
 namespace opendnp3
 {
 
@@ -87,6 +89,33 @@ private:
     StaticDataMap<AnalogOutputStatusSpec> analog_output_status;
     StaticDataMap<TimeAndIntervalSpec> time_and_interval;
     StaticDataMap<OctetStringSpec> octet_string;
+
+    // the static types, in the order Load writes them when the request doesn't order them
+    enum class StaticType : uint8_t
+    {
+        Binary,
+        DoubleBinary,
+        Analog,
+        Counter,
+        FrozenCounter,
+        BinaryOutputStatus,
+        AnalogOutputStatus,
+        TimeAndInterval,
+        OctetString
+    };
+    static constexpr size_t NUM_STATIC_TYPES = 9;
+
+    // the static types in the order the request selected them, which is the order they're reported in
+    std::array<StaticType, NUM_STATIC_TYPES> selection_order;
+    size_t num_selected_types = 0;
+
+    IINField SelectAllImpl(GroupVariation gv);
+    IINField SelectRangeImpl(GroupVariation gv, const Range& range);
+    IINField SelectIndicesImpl(GroupVariation gv, const ICollection<uint16_t>& indices);
+
+    void RecordSelectionOrder(GroupVariation gv);
+    void RecordSelectionOrder(StaticType type);
+    bool LoadType(StaticType type, HeaderWriter& writer);
 
     // ----- helper methods ------
 

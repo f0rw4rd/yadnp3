@@ -136,6 +136,98 @@ bool Database::HasPointsFor(GroupVariation gv) const
 
 IINField Database::SelectAll(GroupVariation gv)
 {
+    const auto result = this->SelectAllImpl(gv);
+    this->RecordSelectionOrder(gv);
+    return result;
+}
+
+IINField Database::SelectRange(GroupVariation gv, const Range& range)
+{
+    const auto result = this->SelectRangeImpl(gv, range);
+    this->RecordSelectionOrder(gv);
+    return result;
+}
+
+IINField Database::SelectIndices(GroupVariation gv, const ICollection<uint16_t>& indices)
+{
+    const auto result = this->SelectIndicesImpl(gv, indices);
+    this->RecordSelectionOrder(gv);
+    return result;
+}
+
+void Database::RecordSelectionOrder(StaticType type)
+{
+    for (size_t i = 0; i < this->num_selected_types; ++i)
+    {
+        if (this->selection_order[i] == type)
+        {
+            return;
+        }
+    }
+    this->selection_order[this->num_selected_types++] = type;
+}
+
+void Database::RecordSelectionOrder(GroupVariation gv)
+{
+    switch (static_cast<uint16_t>(gv) >> 8)
+    {
+    case (1):
+        return this->RecordSelectionOrder(StaticType::Binary);
+    case (3):
+        return this->RecordSelectionOrder(StaticType::DoubleBinary);
+    case (10):
+        return this->RecordSelectionOrder(StaticType::BinaryOutputStatus);
+    case (20):
+        return this->RecordSelectionOrder(StaticType::Counter);
+    case (21):
+        return this->RecordSelectionOrder(StaticType::FrozenCounter);
+    case (30):
+        return this->RecordSelectionOrder(StaticType::Analog);
+    case (40):
+        return this->RecordSelectionOrder(StaticType::AnalogOutputStatus);
+    case (50):
+        return this->RecordSelectionOrder(StaticType::TimeAndInterval);
+    case (110):
+        return this->RecordSelectionOrder(StaticType::OctetString);
+    case (60):
+        // class 0: the types in the usual order, after those already requested
+        for (size_t i = 0; i < NUM_STATIC_TYPES; ++i)
+        {
+            this->RecordSelectionOrder(static_cast<StaticType>(i));
+        }
+        return;
+    default:
+        return;
+    }
+}
+
+bool Database::LoadType(StaticType type, HeaderWriter& writer)
+{
+    switch (type)
+    {
+    case (StaticType::Binary):
+        return load_type(this->binary_input, writer);
+    case (StaticType::DoubleBinary):
+        return load_type(this->double_binary, writer);
+    case (StaticType::Analog):
+        return load_type(this->analog_input, writer);
+    case (StaticType::Counter):
+        return load_type(this->counter, writer);
+    case (StaticType::FrozenCounter):
+        return load_type(this->frozen_counter, writer);
+    case (StaticType::BinaryOutputStatus):
+        return load_type(this->binary_output_status, writer);
+    case (StaticType::AnalogOutputStatus):
+        return load_type(this->analog_output_status, writer);
+    case (StaticType::TimeAndInterval):
+        return load_type(this->time_and_interval, writer);
+    default:
+        return load_type(this->octet_string, writer);
+    }
+}
+
+IINField Database::SelectAllImpl(GroupVariation gv)
+{
     if (gv == GroupVariation::Group60Var1)
     {
         this->select_all_class_zero<BinarySpec>(this->binary_input);
@@ -239,7 +331,7 @@ IINField Database::SelectAll(GroupVariation gv)
     }
 }
 
-IINField Database::SelectRange(GroupVariation gv, const Range& range)
+IINField Database::SelectRangeImpl(GroupVariation gv, const Range& range)
 {
     switch (gv)
     {
@@ -330,7 +422,7 @@ IINField Database::SelectRange(GroupVariation gv, const Range& range)
     }
 }
 
-IINField Database::SelectIndices(GroupVariation gv, const ICollection<uint16_t>& indices)
+IINField Database::SelectIndicesImpl(GroupVariation gv, const ICollection<uint16_t>& indices)
 {
     switch (gv)
     {
@@ -417,6 +509,7 @@ IINField Database::SelectIndices(GroupVariation gv, const ICollection<uint16_t>&
 
 void Database::Unselect()
 {
+    this->num_selected_types = 0;
     this->binary_input.clear_selection();
     this->double_binary.clear_selection();
     this->binary_output_status.clear_selection();
@@ -484,11 +577,22 @@ bool Database::HasAnySelection() const
 
 bool Database::Load(HeaderWriter& writer)
 {
-    return load_type(this->binary_input, writer) && load_type(this->double_binary, writer)
-        && load_type(this->analog_input, writer) && load_type(this->counter, writer)
-        && load_type(this->frozen_counter, writer) && load_type(this->binary_output_status, writer)
-        && load_type(this->analog_output_status, writer) && load_type(this->time_and_interval, writer)
-        && load_type(this->octet_string, writer);
+    // in the order requested, then any type selected some other way
+    for (size_t i = 0; i < this->num_selected_types; ++i)
+    {
+        if (!this->LoadType(this->selection_order[i], writer))
+        {
+            return false;
+        }
+    }
+    for (size_t i = 0; i < NUM_STATIC_TYPES; ++i)
+    {
+        if (!this->LoadType(static_cast<StaticType>(i), writer))
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool Database::Update(const Binary& meas, uint16_t index, EventMode mode)
