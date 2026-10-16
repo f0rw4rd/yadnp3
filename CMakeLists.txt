@@ -128,6 +128,7 @@ if(DNP3_TESTS)
     add_subdirectory(./cpp/tests/unit)
     add_subdirectory(./cpp/tests/asiotests)
     add_subdirectory(./cpp/tests/integration)
+    add_subdirectory(./cpp/tests/conformance)
 
     if(DNP3_INTEROP_TESTS)
         message(WARNING
