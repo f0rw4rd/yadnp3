@@ -46,6 +46,7 @@ FileTransferTask::FileTransferTask(const std::shared_ptr<TaskContext>& context,
       callback(std::move(callback)),
       state(State::OPEN_FILE),
       fileHandle(0),
+      fileSize(0),
       expectedBlockNum(0),
       maxBlockSize(2048),
       lastStatus(FileStatus::SUCCESS),
@@ -58,6 +59,7 @@ void FileTransferTask::Initialize()
 {
     state = State::OPEN_FILE;
     fileHandle = 0;
+    fileSize = 0;
     expectedBlockNum = 0;
     maxBlockSize = 2048;
     lastStatus = FileStatus::SUCCESS;
@@ -264,8 +266,7 @@ bool FileTransferTask::ParseGroup70Var4(const ser4cpp::rseq_t& objects)
 
     ser4cpp::LittleEndian::read(data, fileHandle);
 
-    uint32_t fSize = 0;
-    ser4cpp::LittleEndian::read(data, fSize);
+    ser4cpp::LittleEndian::read(data, fileSize);
 
     ser4cpp::LittleEndian::read(data, maxBlockSize);
 
@@ -319,8 +320,25 @@ bool FileTransferTask::ParseGroup70Var5(const ser4cpp::rseq_t& objects)
     lastBlockReceived = (blockNum & 0x80000000) != 0;
     blockNum &= 0x7FFFFFFF;
 
+    // the blocks must be of the file opened, in order, and no more than the file size it gave, if it gave one
+    if (handle != fileHandle)
+    {
+        lastStatus = FileStatus::HANDLE_EXPIRED;
+        return false;
+    }
+    if (blockNum != expectedBlockNum)
+    {
+        lastStatus = FileStatus::BLOCK_SEQ;
+        return false;
+    }
+
     // Append file data
     const size_t payloadLen = dataLen - 8;
+    if (fileSize != 0 && fileData.size() + payloadLen > fileSize)
+    {
+        lastStatus = FileStatus::BUFFER_OVERFLOW;
+        return false;
+    }
     if (payloadLen > 0 && data.length() >= payloadLen)
     {
         fileData.insert(fileData.end(), static_cast<const uint8_t*>(data),
@@ -418,6 +436,10 @@ IMasterTask::ResponseResult FileTransferTask::ProcessResponse(const APDUResponse
             {
                 if (!ParseGroup70Var5(objects))
                 {
+                    if (lastStatus == FileStatus::SUCCESS)
+                    {
+                        lastStatus = FileStatus::FATAL;
+                    }
                     state = State::CLOSE_FILE;
                     return ResponseResult::OK_REPEAT;
                 }
@@ -439,6 +461,7 @@ IMasterTask::ResponseResult FileTransferTask::ProcessResponse(const APDUResponse
         }
 
         // Unexpected response, try to close
+        lastStatus = FileStatus::FATAL;
         state = State::CLOSE_FILE;
         return ResponseResult::OK_REPEAT;
     }

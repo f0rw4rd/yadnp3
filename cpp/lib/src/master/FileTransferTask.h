@@ -109,6 +109,7 @@ private:
 
     State state;
     uint32_t fileHandle;
+    uint32_t fileSize;
     uint32_t expectedBlockNum;
     uint16_t maxBlockSize;
     FileStatus lastStatus;

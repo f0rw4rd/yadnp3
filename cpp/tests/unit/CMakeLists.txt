@@ -42,6 +42,7 @@ set(unittests_src
     ./TestMaster.cpp
     ./TestMasterAssignClass.cpp
     ./TestMasterCommandRequests.cpp
+    ./TestMasterFileTransfer.cpp
     ./TestMasterMultiCommandRequests.cpp
     ./TestMasterMultidrop.cpp
     ./TestMasterUnsolBehaviors.cpp

@@ -274,6 +274,18 @@ bool ReadDirectoryTask::ParseGroup70Var5(const ser4cpp::rseq_t& objects)
     lastBlockReceived = (blockNum & 0x80000000) != 0;
     blockNum &= 0x7FFFFFFF;
 
+    // the blocks must be of the directory opened, in order
+    if (handle != fileHandle)
+    {
+        lastStatus = FileStatus::HANDLE_EXPIRED;
+        return false;
+    }
+    if (blockNum != expectedBlockNum)
+    {
+        lastStatus = FileStatus::BLOCK_SEQ;
+        return false;
+    }
+
     const size_t payloadLen = dataLen - 8;
     if (payloadLen > 0 && data.length() >= payloadLen)
     {
@@ -423,6 +435,10 @@ IMasterTask::ResponseResult ReadDirectoryTask::ProcessResponse(const APDURespons
             {
                 if (!ParseGroup70Var5(objects))
                 {
+                    if (lastStatus == FileStatus::SUCCESS)
+                    {
+                        lastStatus = FileStatus::FATAL;
+                    }
                     state = State::CLOSE_FILE;
                     return ResponseResult::OK_REPEAT;
                 }
@@ -443,6 +459,7 @@ IMasterTask::ResponseResult ReadDirectoryTask::ProcessResponse(const APDURespons
             }
         }
 
+        lastStatus = FileStatus::FATAL;
         state = State::CLOSE_FILE;
         return ResponseResult::OK_REPEAT;
     }
