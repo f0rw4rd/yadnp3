@@ -32,6 +32,14 @@ namespace measurements
             return true;
         }
 
+        // NaN compares false with everything, so a change to or from it would never pass the deadband
+        const bool newIsNaN = std::isnan(newMeas.value);
+        const bool oldIsNaN = std::isnan(oldMeas.value);
+        if (newIsNaN || oldIsNaN)
+        {
+            return newIsNaN != oldIsNaN;
+        }
+
         double diff = fabs(newMeas.value - oldMeas.value);
         if (std::isinf(diff))
         {

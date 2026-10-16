@@ -42,6 +42,7 @@ set(unittests_src
     ./TestMaster.cpp
     ./TestMasterAssignClass.cpp
     ./TestMasterCommandRequests.cpp
+    ./TestEventTriggers.cpp
     ./TestKeyWrap.cpp
     ./TestTimestamp.cpp
     ./TestMasterFileTransfer.cpp
