@@ -171,6 +171,22 @@ TEST_CASE(SUITE("WriteFile fails on a malformed acknowledgement"))
     REQUIRE(WriteFileWithAck("01 00 00").statusCode == FileStatus::FATAL);
 }
 
+TEST_CASE(SUITE("DeleteFile asks with a file command (g70v3)"))
+{
+    MasterTestFixture t(NoStartupTasks());
+    t.context->OnLowerLayerUp();
+    t.context->DeleteFile("x", [](const FileOperationResult&) {});
+    t.exe->run_many();
+
+    // length 27: name offset 26, name length 1, the other fields zero, then the name
+    std::string zeros;
+    for (int i = 0; i < 22; ++i)
+    {
+        zeros += "00 ";
+    }
+    REQUIRE(t.lower->PopWriteAsHex() == "C0 1B 46 03 5B 01 1B 00 1A 00 01 00 " + zeros + "78");
+}
+
 TEST_CASE(SUITE("GetFileInfo asks with a file descriptor (g70v7)"))
 {
     MasterTestFixture t(NoStartupTasks());
