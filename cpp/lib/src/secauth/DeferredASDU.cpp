@@ -29,7 +29,11 @@ bool DeferredASDU::Set(const ser4cpp::rseq_t& asdu)
         return false;
     }
     m_size = static_cast<uint32_t>(asdu.length());
-    std::memcpy(m_buffer.data(), asdu, m_size);
+    if (m_size > 0)
+    {
+        // an empty sequence's pointer may be null, which memcpy doesn't allow even for no bytes
+        std::memcpy(m_buffer.data(), asdu, m_size);
+    }
     m_isSet = true;
     return true;
 }
