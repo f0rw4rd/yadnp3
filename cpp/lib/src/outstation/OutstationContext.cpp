@@ -590,9 +590,10 @@ bool OContext::ProcessBroadcastRequest(const ParsedRequest& request)
         }
     }
     case (FunctionCode::RECORD_CURRENT_TIME): {
-        if (request.objects.is_not_empty())
+        // the request carries no objects, and the time write that follows it has the next sequence number
+        if (request.objects.is_empty())
         {
-            this->HandleRecordCurrentTime();
+            this->HandleRecordCurrentTime(AppSeqNum(request.header.control.SEQ));
             return true;
         }
         else
@@ -673,7 +674,7 @@ IINField OContext::HandleNonReadResponse(const APDUHeader& header, const ser4cpp
     case (FunctionCode::DELAY_MEASURE):
         return this->HandleDelayMeasure(objects, writer);
     case (FunctionCode::RECORD_CURRENT_TIME):
-        return objects.is_empty() ? this->HandleRecordCurrentTime() : IINField(IINBit::PARAM_ERROR);
+        return objects.is_empty() ? this->HandleRecordCurrentTime(this->sol.seq.num) : IINField(IINBit::PARAM_ERROR);
     case (FunctionCode::DISABLE_UNSOLICITED):
         return this->params.allowUnsolicited ? this->HandleDisableUnsolicited(objects, &writer)
                                              : IINField(IINBit::FUNC_NOT_SUPPORTED);
@@ -823,9 +824,9 @@ IINField OContext::HandleDelayMeasure(const ser4cpp::rseq_t& objects, HeaderWrit
     return IINField(IINBit::PARAM_ERROR);
 }
 
-IINField OContext::HandleRecordCurrentTime()
+IINField OContext::HandleRecordCurrentTime(const AppSeqNum& seq)
 {
-    this->time.RecordCurrentTime(this->sol.seq.num, Timestamp(this->executor->get_time()));
+    this->time.RecordCurrentTime(seq, Timestamp(this->executor->get_time()));
     return IINField::Empty();
 }
 

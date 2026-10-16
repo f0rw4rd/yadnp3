@@ -237,3 +237,24 @@ TEST_CASE(SUITE("ShallConfirm: Unsolicited responses should clear BROADCAST when
 
     REQUIRE(t.lower->PopWriteAsHex().substr(0, 11) == "F3 82 00 00");
 }
+
+TEST_CASE(SUITE("Broadcast record current time is used by the following LAN time write"))
+{
+    OutstationConfig config;
+    OutstationTestObject t(config, DatabaseConfig());
+    t.LowerLayerUp();
+
+    t.SendToOutstation(hex::ClassPoll(0, PointClass::Class0));
+    REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 00");
+    t.OnTxReady();
+
+    t.AdvanceTime(TimeDuration::Milliseconds(10));
+    t.BroadcastToOutstation(LinkBroadcastAddress::DontConfirm, "C1 18"); // record current time
+    REQUIRE(t.lower->HasNoData());
+
+    t.AdvanceTime(TimeDuration::Milliseconds(20));
+    t.SendToOutstation("C2 02 32 03 07 01 D2 04 00 00 00 00"); // write Grp50Var3, value = 1234 ms after epoch
+    REQUIRE(t.lower->PopWriteAsHex() == "C2 81 81 00");
+    REQUIRE(t.application->timestamps.size() == 1);
+    REQUIRE(t.application->timestamps.front().msSinceEpoch == 1254); // 1234 + difference of 20
+}

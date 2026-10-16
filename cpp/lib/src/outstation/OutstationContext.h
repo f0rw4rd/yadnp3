@@ -175,7 +175,7 @@ private:
     IINField HandleOperate(const ser4cpp::rseq_t& objects, HeaderWriter& writer);
     IINField HandleDirectOperate(const ser4cpp::rseq_t& objects, OperateType opType, HeaderWriter* pWriter);
     IINField HandleDelayMeasure(const ser4cpp::rseq_t& objects, HeaderWriter& writer);
-    IINField HandleRecordCurrentTime();
+    IINField HandleRecordCurrentTime(const AppSeqNum& seq);
     IINField HandleRestart(const ser4cpp::rseq_t& objects, bool isWarmRestart, HeaderWriter* pWriter);
     IINField HandleAssignClass(const ser4cpp::rseq_t& objects);
     IINField HandleDisableUnsolicited(const ser4cpp::rseq_t& objects, HeaderWriter* writer);
