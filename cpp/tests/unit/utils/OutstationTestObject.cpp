@@ -53,6 +53,12 @@ size_t OutstationTestObject::OnTxReady()
     return exe->run_many();
 }
 
+OutstationTestObject::~OutstationTestObject()
+{
+    // a pending action holds the context's parts, which hold the executor
+    exe->clear();
+}
+
 size_t OutstationTestObject::SendToOutstation(const std::string& hex)
 {
     HexSequence hs(hex);

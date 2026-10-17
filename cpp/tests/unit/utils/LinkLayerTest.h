@@ -40,6 +40,8 @@ public:
 
     LinkLayerTest(const opendnp3::LinkLayerConfig& config = DefaultConfig());
 
+    ~LinkLayerTest();
+
     bool OnFrame(opendnp3::LinkFunction func,
                  bool isMaster,
                  bool fcb,

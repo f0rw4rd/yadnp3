@@ -43,6 +43,8 @@ public:
                          const opendnp3::DatabaseConfig& db_config = opendnp3::DatabaseConfig(),
                          std::shared_ptr<opendnp3::IFileHandler> file_handler = nullptr);
 
+    ~OutstationTestObject();
+
     size_t SendToOutstation(const std::string& hex);
 
     size_t BroadcastToOutstation(opendnp3::LinkBroadcastAddress broadcast_address, const std::string& hex);

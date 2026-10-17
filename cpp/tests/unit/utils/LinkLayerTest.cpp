@@ -37,6 +37,12 @@ LinkLayerTest::LinkLayerTest(const LinkLayerConfig& config)
     link.SetRouter(*this);
 }
 
+LinkLayerTest::~LinkLayerTest()
+{
+    // a pending timer holds the link context, which holds the executor
+    exe->clear();
+}
+
 bool LinkLayerTest::OnFrame(LinkFunction func,
                             bool isMaster,
                             bool fcb,

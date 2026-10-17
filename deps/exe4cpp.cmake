@@ -4,6 +4,8 @@ FetchContent_Declare(
     exe4cpp
     URL      https://github.com/automatak/exe4cpp/archive/fb878a4de598ba9d6e4338afebf83f96e03af1b8.zip
     URL_HASH SHA1=18B141E8CF09DC8D28CC62DD5FA2920670D501BD
+    # lets a test drop the MockExecutor's pending actions: see the script
+    PATCH_COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_LIST_DIR}/exe4cpp-clear.cmake
 )
 
 FetchContent_GetProperties(exe4cpp)

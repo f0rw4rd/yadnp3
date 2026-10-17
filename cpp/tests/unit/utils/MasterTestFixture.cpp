@@ -61,6 +61,8 @@ MasterTestFixture::MasterTestFixture(const MasterParams& params,
 MasterTestFixture::~MasterTestFixture()
 {
     this->scheduler->Shutdown();
+    // a pending action holds the context, which holds the executor
+    this->exe->clear();
 }
 
 bool MasterTestFixture::SendToMaster(const std::string& hex)
