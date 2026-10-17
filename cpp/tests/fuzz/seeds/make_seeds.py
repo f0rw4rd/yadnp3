@@ -76,3 +76,5 @@ write('fuzzdecoder_logging', 'lpdu0', bytes([0]) + bytes.fromhex('05 64 0B C4 00
 rng = __import__('random').Random(1815)
 for i in range(8):
     write('fuzzroundtrip', f'seed{i}', bytes(rng.randrange(256) for _ in range(64 * (i + 1))))
+for i in range(8):
+    write('fuzzroundtrip_events', f'seed{i}', bytes(rng.randrange(256) for _ in range(96 * (i + 1))))
