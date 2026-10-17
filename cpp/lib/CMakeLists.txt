@@ -191,6 +191,7 @@ set(opendnp3_public_headers
     ./include/opendnp3/secauth/CriticalFunctions.h
     ./include/opendnp3/secauth/HMACMode.h
     ./include/opendnp3/secauth/IMasterApplicationSA.h
+    ./include/opendnp3/secauth/IMasterSA.h
     ./include/opendnp3/secauth/IOutstationApplicationSA.h
     ./include/opendnp3/secauth/MasterAuthSettings.h
     ./include/opendnp3/secauth/MasterAuthStackConfig.h
@@ -495,11 +496,12 @@ set(opendnp3_private_headers
     ./src/secauth/master/BeginUpdateKeyChangeCallbackT.h
     ./src/secauth/master/BeginUpdateKeyChangeResult.h
     ./src/secauth/master/FinishUpdateKeyChangeArgs.h
-    ./src/secauth/master/IMasterUserDatabase.h
     ./src/secauth/master/KeyStatusHandler.h
     ./src/secauth/master/KeyWrap.h
-    ./src/secauth/master/MasterSecurity.h
+    ./src/secauth/master/MasterAuthContext.h
+    ./src/secauth/master/MasterAuthStack.h
     ./src/secauth/master/MasterUserDatabase.h
+    ./src/secauth/master/SessionKeyTask.h
     ./src/secauth/master/UserStatusChange.h
 
     ./src/secauth/outstation/AuthorityCredentials.h
@@ -806,8 +808,10 @@ set(opendnp3_src
     ./src/secauth/master/FinishUpdateKeyChangeArgs.cpp
     ./src/secauth/master/KeyStatusHandler.cpp
     ./src/secauth/master/KeyWrap.cpp
-    ./src/secauth/master/MasterSecurity.cpp
+    ./src/secauth/master/MasterAuthContext.cpp
+    ./src/secauth/master/MasterAuthStack.cpp
     ./src/secauth/master/MasterUserDatabase.cpp
+    ./src/secauth/master/SessionKeyTask.cpp
     ./src/secauth/master/UserStatusChange.cpp
 
     ./src/secauth/outstation/AuthorityCredentials.cpp

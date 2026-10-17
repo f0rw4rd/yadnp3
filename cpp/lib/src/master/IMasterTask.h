@@ -232,6 +232,15 @@ private:
      */
     virtual bool BlocksLowerPriority() const = 0;
 
+    /**
+     * A task that must not stop on a failure (the session keys) retries with the back-off of a timeout instead of
+     * being disabled
+     */
+    virtual bool RetriesOnFailure() const
+    {
+        return false;
+    }
+
     IMasterTask();
 
     TaskConfig config;

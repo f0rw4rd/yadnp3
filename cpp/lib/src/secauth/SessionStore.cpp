@@ -109,6 +109,16 @@ KeyStatus SessionStore::TryGetKeyView(uint16_t userNum, SessionKeysView& view, c
     return entry->TryGetKeyView(view, now);
 }
 
+void SessionStore::Invalidate(uint16_t userNum)
+{
+    sessions.erase(userNum);
+}
+
+void SessionStore::Clear()
+{
+    sessions.clear();
+}
+
 KeyStatus SessionStore::IncrementAuthCount(uint16_t userNum, const Timestamp& now)
 {
     auto it = sessions.find(userNum);

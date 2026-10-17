@@ -24,6 +24,7 @@
 #include "master/MasterSchedulerBackend.h"
 #include "master/MasterStack.h"
 #include "outstation/OutstationStack.h"
+#include "secauth/master/MasterAuthStack.h"
 
 #include "opendnp3/logging/LogLevels.h"
 
@@ -111,6 +112,17 @@ std::shared_ptr<IMaster> DNP3Channel::AddMaster(const std::string& id,
 {
     auto stack = MasterStack::Create(this->logger.detach(id), this->executor, SOEHandler, application, this->scheduler,
                                      this->iohandler, this->resources, config);
+
+    return this->AddStack(config.link, stack);
+}
+
+std::shared_ptr<IMasterSA> DNP3Channel::AddMasterSA(const std::string& id,
+                                                    std::shared_ptr<ISOEHandler> SOEHandler,
+                                                    std::shared_ptr<IMasterApplicationSA> application,
+                                                    const MasterAuthStackConfig& config)
+{
+    auto stack = MasterAuthStack::Create(this->logger.detach(id), this->executor, SOEHandler, application,
+                                         this->scheduler, this->iohandler, this->resources, config);
 
     return this->AddStack(config.link, stack);
 }

@@ -44,6 +44,7 @@ set(unittests_src
     ./TestMasterCommandRequests.cpp
     ./TestChallengeState.cpp
     ./TestSessionKeyChangeState.cpp
+    ./TestMasterAuth.cpp
     ./TestEncryptedUpdateKey.cpp
     ./TestEventTriggers.cpp
     ./TestFloatSerialization.cpp
@@ -110,7 +111,8 @@ add_executable(unittests
     ${unittests_headers} ${unittests_src}
 )
 target_compile_features(unittests PRIVATE cxx_std_14)
-target_link_libraries(unittests PRIVATE catch dnp3mocks)
+# OpenSSL directly: the Secure Authentication tests check the master with it
+target_link_libraries(unittests PRIVATE catch dnp3mocks OpenSSL::Crypto)
 target_include_directories(unittests PRIVATE ./ ../../lib/src)
 set_target_properties(unittests PROPERTIES FOLDER cpp/tests)
 add_test(NAME unittests COMMAND unittests)

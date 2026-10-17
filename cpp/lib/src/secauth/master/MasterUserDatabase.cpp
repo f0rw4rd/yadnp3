@@ -19,31 +19,59 @@
 namespace opendnp3
 {
 
-bool MasterUserDatabase::GetUpdateKey(const std::string& userName, UpdateKey& key) const
+void MasterUserDatabase::AddOrUpdate(uint16_t userNum, const std::string& userName, const UpdateKey& key)
 {
-    auto it = users.find(userName);
-    if (it != users.end())
-    {
-        key = it->second.key;
-        return key.IsValid();
-    }
-    return false;
+    users[userNum] = {userName, key};
 }
 
-void MasterUserDatabase::AddOrUpdate(const std::string& userName, uint16_t userNum, const UpdateKey& key)
+bool MasterUserDatabase::GetUpdateKey(uint16_t userNum, UpdateKey& key) const
 {
-    users[userName] = {userNum, key};
+    const auto it = users.find(userNum);
+    if (it == users.end() || !it->second.key.IsValid())
+    {
+        return false;
+    }
+    key = it->second.key;
+    return true;
+}
+
+bool MasterUserDatabase::UserExists(uint16_t userNum) const
+{
+    return users.find(userNum) != users.end();
+}
+
+bool MasterUserDatabase::GetUserName(uint16_t userNum, std::string& userName) const
+{
+    const auto it = users.find(userNum);
+    if (it == users.end())
+    {
+        return false;
+    }
+    userName = it->second.name;
+    return true;
 }
 
 bool MasterUserDatabase::GetUserNum(const std::string& userName, uint16_t& userNum) const
 {
-    auto it = users.find(userName);
-    if (it != users.end())
+    for (const auto& user : users)
     {
-        userNum = it->second.userNum;
-        return true;
+        if (user.second.name == userName)
+        {
+            userNum = user.first;
+            return true;
+        }
     }
     return false;
+}
+
+std::vector<uint16_t> MasterUserDatabase::GetUserNums() const
+{
+    std::vector<uint16_t> nums;
+    for (const auto& user : users)
+    {
+        nums.push_back(user.first);
+    }
+    return nums;
 }
 
 } // namespace opendnp3

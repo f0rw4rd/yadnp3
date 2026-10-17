@@ -87,6 +87,12 @@ public:
     /// Increment the auth count for a user
     KeyStatus IncrementAuthCount(uint16_t userNum, const Timestamp& now);
 
+    /// Forget a user's session keys, so new ones must be set
+    void Invalidate(uint16_t userNum);
+
+    /// Forget every user's session keys
+    void Clear();
+
 private:
     TimeDuration keyDuration;
     uint32_t maxAuthCount;

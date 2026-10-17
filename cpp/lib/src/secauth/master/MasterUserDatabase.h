@@ -17,30 +17,44 @@
 #ifndef OPENDNP3_MASTERUSERDATABASE_H
 #define OPENDNP3_MASTERUSERDATABASE_H
 
-#include "secauth/master/IMasterUserDatabase.h"
+#include "opendnp3/secauth/UpdateKey.h"
 
+#include <cstdint>
 #include <map>
+#include <string>
+#include <vector>
 
 namespace opendnp3
 {
 
 /**
- * Concrete in-memory implementation of IMasterUserDatabase.
+ * The master's users: each user number has a name and an update key.
  */
-class MasterUserDatabase final : public IMasterUserDatabase
+class MasterUserDatabase final
 {
 public:
-    virtual bool GetUpdateKey(const std::string& userName, UpdateKey& key) const override;
-    virtual void AddOrUpdate(const std::string& userName, uint16_t userNum, const UpdateKey& key) override;
-    virtual bool GetUserNum(const std::string& userName, uint16_t& userNum) const override;
+    /// adds the user, or replaces its name and update key
+    void AddOrUpdate(uint16_t userNum, const std::string& userName, const UpdateKey& key);
+
+    /// the user's update key, if the user exists and the key is valid
+    bool GetUpdateKey(uint16_t userNum, UpdateKey& key) const;
+
+    bool UserExists(uint16_t userNum) const;
+
+    bool GetUserName(uint16_t userNum, std::string& userName) const;
+
+    bool GetUserNum(const std::string& userName, uint16_t& userNum) const;
+
+    std::vector<uint16_t> GetUserNums() const;
 
 private:
     struct UserEntry
     {
-        uint16_t userNum;
+        std::string name;
         UpdateKey key;
     };
-    std::map<std::string, UserEntry> users;
+
+    std::map<uint16_t, UserEntry> users;
 };
 
 } // namespace opendnp3

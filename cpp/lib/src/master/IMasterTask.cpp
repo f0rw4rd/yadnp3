@@ -112,7 +112,10 @@ void IMasterTask::CompleteTask(TaskCompletion result, Timestamp now)
     */
     default:
     {
-        this->behavior.Disable();
+        if (this->RetriesOnFailure())
+            this->behavior.OnResponseTimeout(now);
+        else
+            this->behavior.Disable();
         if (this->BlocksLowerPriority())
             this->context->AddBlock(*this);
     }

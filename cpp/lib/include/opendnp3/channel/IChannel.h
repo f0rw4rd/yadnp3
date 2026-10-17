@@ -34,6 +34,9 @@
 #include "opendnp3/outstation/IOutstation.h"
 #include "opendnp3/outstation/IOutstationApplication.h"
 #include "opendnp3/outstation/OutstationStackConfig.h"
+#include "opendnp3/secauth/IMasterApplicationSA.h"
+#include "opendnp3/secauth/IMasterSA.h"
+#include "opendnp3/secauth/MasterAuthStackConfig.h"
 
 #include <memory>
 
@@ -77,6 +80,23 @@ public:
                                                std::shared_ptr<ISOEHandler> SOEHandler,
                                                std::shared_ptr<IMasterApplication> application,
                                                const MasterStackConfig& config)
+        = 0;
+
+    /**
+     * Add a master with Secure Authentication (IEEE 1815-2012, SAv5) to the channel. Add its users before
+     * enabling it: the users' session keys are set when it comes online.
+     *
+     * @param id An ID that gets used for logging
+     * @param SOEHandler Callback object for all received measurements
+     * @param application The master application bound to the master session
+     * @param config Configuration object that controls how the master and its authentication behave
+     *
+     * @return shared_ptr to the running master
+     */
+    virtual std::shared_ptr<IMasterSA> AddMasterSA(const std::string& id,
+                                                   std::shared_ptr<ISOEHandler> SOEHandler,
+                                                   std::shared_ptr<IMasterApplicationSA> application,
+                                                   const MasterAuthStackConfig& config)
         = 0;
 
     /**

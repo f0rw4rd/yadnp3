@@ -64,6 +64,11 @@ public:
                                        std::shared_ptr<IMasterApplication> application,
                                        const MasterStackConfig& config) final;
 
+    std::shared_ptr<IMasterSA> AddMasterSA(const std::string& id,
+                                           std::shared_ptr<ISOEHandler> SOEHandler,
+                                           std::shared_ptr<IMasterApplicationSA> application,
+                                           const MasterAuthStackConfig& config) final;
+
     std::shared_ptr<IOutstation> AddOutstation(const std::string& id,
                                                std::shared_ptr<ICommandHandler> commandHandler,
                                                std::shared_ptr<IOutstationApplication> application,
