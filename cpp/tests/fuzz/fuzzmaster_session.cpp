@@ -112,7 +112,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         t.context->OnReceive(Message(Addresses(1024, 1), ser4cpp::rseq_t(apdu.data(), apdu.size())));
         t.exe->run_many();
         if (flags & 0x02)
-            t.exe->advance_to_next_timer() && t.exe->run_many();
+        {
+            // a bounded step: a timer at the end of time would take the mock clock where its arithmetic overflows
+            t.exe->advance_time(std::chrono::seconds(1 + (flags >> 4)));
+            t.exe->run_many();
+        }
         if (flags & 0x04)
         {
             t.context->OnLowerLayerDown();

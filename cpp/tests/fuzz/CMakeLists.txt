@@ -43,3 +43,7 @@ target_link_libraries(fuzzoutstation_session PRIVATE dnp3mocks)
 add_fuzzer(fuzzmaster_session ./fuzzmaster_session.cpp ${fuzz_test_utils})
 target_include_directories(fuzzmaster_session PRIVATE ../unit ../../lib/src)
 target_link_libraries(fuzzmaster_session PRIVATE dnp3mocks)
+
+add_fuzzer(fuzzroundtrip ./fuzzroundtrip.cpp ${fuzz_test_utils})
+target_include_directories(fuzzroundtrip PRIVATE ../unit ../../lib/src)
+target_link_libraries(fuzzroundtrip PRIVATE dnp3mocks)

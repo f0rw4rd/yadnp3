@@ -71,3 +71,8 @@ for i, a in enumerate(APDUS):
     write('fuzzdecoder_logging', f'apdu{i}', bytes([2]) + b)
     write('fuzzdecoder_logging', f'tpdu{i}', bytes([1, 0xC0]) + b)
 write('fuzzdecoder_logging', 'lpdu0', bytes([0]) + bytes.fromhex('05 64 0B C4 00 04 01 00 CA 8A C0 C0 01 3C 01 06 FF 50'))
+
+# fuzzroundtrip reads point values from its input: random bytes of a few lengths, from a fixed seed
+rng = __import__('random').Random(1815)
+for i in range(8):
+    write('fuzzroundtrip', f'seed{i}', bytes(rng.randrange(256) for _ in range(64 * (i + 1))))

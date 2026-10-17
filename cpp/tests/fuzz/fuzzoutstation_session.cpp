@@ -160,7 +160,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
             t.context.OnReceive(Message(Addresses(), apdu));
         t.OnTxReady();
         if (flags & 0x02)
-            t.AdvanceToNextTimer();
+            // a bounded step: a timer at the end of time would take the mock clock where its arithmetic overflows
+            t.AdvanceTime(TimeDuration::Seconds(1 + (flags >> 5)));
         if (flags & 0x04)
             t.Transaction([&](IUpdateHandler& db) { db.Update(Binary((flags & 0x08) != 0), flags % 5); });
         if (flags & 0x10)
