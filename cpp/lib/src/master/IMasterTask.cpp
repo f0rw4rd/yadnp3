@@ -88,8 +88,9 @@ void IMasterTask::CompleteTask(TaskCompletion result, Timestamp now)
         this->behavior.Reset();
         break;
 
-    // back-off exponentially using the task retry
+    // back-off exponentially using the task retry: an authentication failure may pass once the session keys change
     case (TaskCompletion::FAILURE_RESPONSE_TIMEOUT):
+    case (TaskCompletion::FAILURE_BAD_AUTHENTICATION):
     {
         this->behavior.OnResponseTimeout(now);
         if (this->BlocksLowerPriority())
@@ -106,6 +107,8 @@ void IMasterTask::CompleteTask(TaskCompletion result, Timestamp now)
     FAILURE_BAD_RESPONSE
     FAILURE_START_TIMEOUT
     FAILURE_MESSAGE_FORMAT_ERROR
+    FAILURE_NO_USER
+    FAILURE_NOT_AUTHORIZED
     */
     default:
     {
@@ -145,6 +148,21 @@ void IMasterTask::OnStartTimeout(Timestamp now)
 void IMasterTask::OnMessageFormatError(Timestamp now)
 {
     this->CompleteTask(TaskCompletion::FAILURE_MESSAGE_FORMAT_ERROR, now);
+}
+
+void IMasterTask::OnNoUser(Timestamp now)
+{
+    this->CompleteTask(TaskCompletion::FAILURE_NO_USER, now);
+}
+
+void IMasterTask::OnAuthenticationFailure(Timestamp now)
+{
+    this->CompleteTask(TaskCompletion::FAILURE_BAD_AUTHENTICATION, now);
+}
+
+void IMasterTask::OnAuthorizationFailure(Timestamp now)
+{
+    this->CompleteTask(TaskCompletion::FAILURE_NOT_AUTHORIZED, now);
 }
 
 void IMasterTask::OnRequestSent(Timestamp now)

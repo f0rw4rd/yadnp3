@@ -20,6 +20,7 @@
 #ifndef OPENDNP3_TASKCONFIG_H
 #define OPENDNP3_TASKCONFIG_H
 
+#include "opendnp3/app/User.h"
 #include "opendnp3/master/ITaskCallback.h"
 #include "opendnp3/master/TaskId.h"
 
@@ -34,7 +35,10 @@ namespace opendnp3
 class TaskConfig
 {
 public:
-    TaskConfig(TaskId taskId, std::shared_ptr<ITaskCallback> pCallback) : taskId(taskId), pCallback(pCallback) {}
+    TaskConfig(TaskId taskId, std::shared_ptr<ITaskCallback> pCallback, User user = User::Default())
+        : taskId(taskId), pCallback(pCallback), user(user)
+    {
+    }
 
     static TaskConfig Default()
     {
@@ -53,6 +57,8 @@ public:
 public:
     TaskId taskId;
     std::shared_ptr<ITaskCallback> pCallback;
+    /// the Secure Authentication user the task's requests are made as
+    User user;
 };
 
 } // namespace opendnp3

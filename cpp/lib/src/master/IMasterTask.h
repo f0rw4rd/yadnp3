@@ -145,9 +145,40 @@ public:
     void OnMessageFormatError(Timestamp now);
 
     /**
+     * Called when the task's user is not defined on the master (SA only)
+     */
+    void OnNoUser(Timestamp now);
+
+    /**
+     * Called when the outstation fails the request's authentication, or reports an error for it (SA only)
+     */
+    void OnAuthenticationFailure(Timestamp now);
+
+    /**
+     * Called when the outstation reports the request's user is not authorized for it (SA only)
+     */
+    void OnAuthorizationFailure(Timestamp now);
+
+    /**
      * Called when the task first starts, before the first request is formatted
      */
     void OnStart();
+
+    /**
+     * The Secure Authentication user the task's requests are made as
+     */
+    User GetUser() const
+    {
+        return this->config.user;
+    }
+
+    /**
+     * A Secure Authentication task runs without a session, and receives its authentication responses itself
+     */
+    virtual bool IsAuthTask() const
+    {
+        return false;
+    }
 
     /**
      * Called once the request of a task that expects no response has been sent
