@@ -40,7 +40,8 @@ public:
 
     bool ValuesEqual(const AnalogOutput<T>& lhs) const
     {
-        return value == lhs.value;
+        // NaN equals nothing, itself included, so the echo of a NaN setpoint would never match it
+        return value == lhs.value || (value != value && lhs.value != lhs.value);
     }
 
     T value;

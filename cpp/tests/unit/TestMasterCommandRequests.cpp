@@ -31,6 +31,7 @@
 #include <catch.hpp>
 
 #include <iostream>
+#include <limits>
 
 using namespace opendnp3;
 using namespace ser4cpp;
@@ -389,6 +390,25 @@ TEST_CASE(SUITE("CloseWhileWaitingForCommandResponse"))
 
     REQUIRE(queue.PopOnlyEqualValue(TaskCompletion::FAILURE_NO_COMMS,
                                     CommandPointResult(0, 1, CommandPointState::INIT, CommandStatus::UNDEFINED)));
+}
+
+TEST_CASE(SUITE("A NaN setpoint echoed back as sent succeeds"))
+{
+    MasterTestFixture t(NoStartupTasks());
+    t.context->OnLowerLayerUp();
+
+    AnalogOutputFloat32 ao(std::numeric_limits<float>::quiet_NaN());
+    CommandCallbackQueue queue;
+    t.context->DirectOperate(CommandSet({WithIndex(ao, 1)}), queue.Callback(), TaskConfig::Default());
+    t.exe->run_many();
+
+    const auto request = t.lower->PopWriteAsHex();
+    REQUIRE(request.substr(0, 17) == "C0 05 29 03 28 01");
+    t.context->OnTxReady();
+    t.SendToMaster("C0 81 00 00" + request.substr(5)); // the echo of the request's objects
+
+    REQUIRE(queue.PopOnlyEqualValue(TaskCompletion::SUCCESS,
+                                    CommandPointResult(0, 1, CommandPointState::SUCCESS, CommandStatus::SUCCESS)));
 }
 
 TEST_CASE(SUITE("ResponseTimeout"))
