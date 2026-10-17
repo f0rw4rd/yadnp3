@@ -57,6 +57,8 @@ public:
 
     KeyStatus GetSessionKeyStatus(User user) override;
 
+    void ChangeUserStatus(const UserStatusChange& change, const TaskConfig& config) override;
+
 private:
     const std::shared_ptr<MAuthContext> authContext;
 };

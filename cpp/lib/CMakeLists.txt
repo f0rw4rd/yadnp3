@@ -192,6 +192,7 @@ set(opendnp3_public_headers
     ./include/opendnp3/secauth/HMACMode.h
     ./include/opendnp3/secauth/IMasterApplicationSA.h
     ./include/opendnp3/secauth/IMasterSA.h
+    ./include/opendnp3/secauth/UserStatusChange.h
     ./include/opendnp3/secauth/IOutstationApplicationSA.h
     ./include/opendnp3/secauth/MasterAuthSettings.h
     ./include/opendnp3/secauth/MasterAuthStackConfig.h
@@ -502,7 +503,7 @@ set(opendnp3_private_headers
     ./src/secauth/master/MasterAuthStack.h
     ./src/secauth/master/MasterUserDatabase.h
     ./src/secauth/master/SessionKeyTask.h
-    ./src/secauth/master/UserStatusChange.h
+    ./src/secauth/master/UserStatusChangeTask.h
 
     ./src/secauth/outstation/AuthorityCredentials.h
     ./src/secauth/outstation/ChallengeState.h
@@ -812,7 +813,7 @@ set(opendnp3_src
     ./src/secauth/master/MasterAuthStack.cpp
     ./src/secauth/master/MasterUserDatabase.cpp
     ./src/secauth/master/SessionKeyTask.cpp
-    ./src/secauth/master/UserStatusChange.cpp
+    ./src/secauth/master/UserStatusChangeTask.cpp
 
     ./src/secauth/outstation/AuthorityCredentials.cpp
     ./src/secauth/outstation/ChallengeState.cpp

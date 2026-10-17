@@ -379,3 +379,35 @@ TEST_CASE(SUITE("An authentication error fails the request"))
     REQUIRE(queue.values.size() == 1);
     REQUIRE(queue.values.front().summary == TaskCompletion::FAILURE_NOT_AUTHORIZED);
 }
+
+TEST_CASE(SUITE("A user status change is sent as the authority made it, and its challenge answered"))
+{
+    AuthFixture t;
+    t.AddDefaultUser();
+    t.context->OnLowerLayerUp();
+    t.exe->run_many();
+    const auto controlKey = t.SetSessionKeys();
+
+    t.context->ChangeUserStatus(UserStatusChange(KeyChangeMethod::AES_128_SHA1_HMAC, UserOperation::OP_ADD, 9, 2, 30,
+                                                 "bob", {}, {0xC1, 0xC2, 0xC3}),
+                                TaskConfig::Default());
+    t.exe->run_many();
+    const auto request = t.PopWrite();
+    const auto seq = static_cast<uint8_t>(request[0] & 0x0F);
+
+    // the method, the operation, SCS, role and expiry, then the three lengths, then the name, key and certification
+    const auto object = Concat({{0x03, 0x01}, UInt32(9), UInt16(2), UInt16(30), UInt16(3), UInt16(0), UInt16(3),
+                                {'b', 'o', 'b'}, {0xC1, 0xC2, 0xC3}});
+    REQUIRE(ToHex(request)
+            == ToHex(Concat({{static_cast<uint8_t>(0xC0 | seq), 0x20, 0x78, 0x0A, 0x5B, 0x01},
+                             UInt16(static_cast<uint16_t>(object.size())), object})));
+
+    const auto challenge = AuthResponse(seq, 1, Concat({UInt32(8), UInt16(1), {0x04, 0x01}, {0x10, 0x20, 0x30, 0x40}}));
+    t.Send(challenge);
+    const auto reply = t.PopWrite();
+    REQUIRE(Bytes(reply.end() - 16, reply.end()) == HMAC256(controlKey, Concat({challenge, request}), 16));
+
+    t.Send({static_cast<uint8_t>(0xC0 | seq), 0x81, 0x00, 0x00});
+    REQUIRE(t.application->completions.back().type == MasterTaskType::USER_TASK);
+    REQUIRE(t.application->completions.back().result == TaskCompletion::SUCCESS);
+}

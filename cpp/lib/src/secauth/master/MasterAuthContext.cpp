@@ -24,6 +24,7 @@
 #include "secauth/Crypto.h"
 #include "secauth/HMACProvider.h"
 #include "secauth/SingleObjectHandlers.h"
+#include "secauth/master/UserStatusChangeTask.h"
 
 #include "opendnp3/logging/LogLevels.h"
 
@@ -112,6 +113,13 @@ void MAuthContext::AddUser(User user, const std::string& userName, const UpdateK
 KeyStatus MAuthContext::GetSessionKeyStatus(User user)
 {
     return this->sessions.GetKeyStatus(user.GetId(), this->Now());
+}
+
+void MAuthContext::ChangeUserStatus(const UserStatusChange& change, const TaskConfig& config)
+{
+    const auto timeout = this->Now() + this->params.taskStartTimeout;
+    this->ScheduleAdhocTask(std::make_shared<UserStatusChangeTask>(this->tasks.context, *this->application, timeout,
+                                                                   this->logger, change, config));
 }
 
 void MAuthContext::DemandSessionKeys(uint16_t userNum)

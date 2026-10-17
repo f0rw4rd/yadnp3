@@ -26,6 +26,7 @@
 
 #include "opendnp3/secauth/IMasterApplicationSA.h"
 #include "opendnp3/secauth/MasterAuthSettings.h"
+#include "opendnp3/secauth/UserStatusChange.h"
 
 #include <array>
 #include <map>
@@ -67,6 +68,9 @@ public:
 
     /// the user's session key status, as the master sees it
     KeyStatus GetSessionKeyStatus(User user);
+
+    /// sends a user status change (g120v10) from the authority
+    void ChangeUserStatus(const UserStatusChange& change, const TaskConfig& config);
 
 private:
     MAuthContext(const Addresses& addresses,

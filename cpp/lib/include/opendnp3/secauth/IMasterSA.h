@@ -20,7 +20,9 @@
 #include "opendnp3/app/User.h"
 #include "opendnp3/gen/KeyStatus.h"
 #include "opendnp3/master/IMaster.h"
+#include "opendnp3/master/TaskConfig.h"
 #include "opendnp3/secauth/UpdateKey.h"
+#include "opendnp3/secauth/UserStatusChange.h"
 
 #include <string>
 
@@ -49,6 +51,12 @@ public:
      * @return the user's session key status, as the master sees it
      */
     virtual KeyStatus GetSessionKeyStatus(User user) = 0;
+
+    /**
+     * Send a user status change (g120v10), made and certified by the authority, to add, delete or change a user on
+     * the outstation. It is a critical request: the config's user must have session keys to answer its challenge.
+     */
+    virtual void ChangeUserStatus(const UserStatusChange& change, const TaskConfig& config = TaskConfig::Default()) = 0;
 };
 
 } // namespace opendnp3

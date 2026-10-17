@@ -80,4 +80,10 @@ KeyStatus MasterAuthStack::GetSessionKeyStatus(User user)
     return this->executor->return_from<KeyStatus>(get);
 }
 
+void MasterAuthStack::ChangeUserStatus(const UserStatusChange& change, const TaskConfig& config)
+{
+    auto send = [context = this->authContext, change, config]() { context->ChangeUserStatus(change, config); };
+    this->executor->post(send);
+}
+
 } // namespace opendnp3
