@@ -78,3 +78,6 @@ for i in range(8):
     write('fuzzroundtrip', f'seed{i}', bytes(rng.randrange(256) for _ in range(64 * (i + 1))))
 for i in range(8):
     write('fuzzroundtrip_events', f'seed{i}', bytes(rng.randrange(256) for _ in range(96 * (i + 1))))
+# fuzzroundtrip_commands: a mode byte (kind of command, select-before-operate or not), then the commands
+for mode in range(16):
+    write('fuzzroundtrip_commands', f'seed{mode}', bytes([mode]) + bytes(rng.randrange(256) for _ in range(48)))

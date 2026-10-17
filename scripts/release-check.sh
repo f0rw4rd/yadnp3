@@ -8,6 +8,7 @@
 #   OUT            where builds, logs and reports go (default: build-release-check)
 #   FUZZ_SECONDS   how long each fuzzer runs after replaying its corpus (default: 300)
 #   JOBS           parallel build jobs (default: nproc)
+#   MVN            the Maven command (default: mvn)
 #
 # Needs: cmake, clang (fuzzers), OpenSSL headers, JDK 17+ and mvn (conformance), python3 (python).
 set -euo pipefail
@@ -16,6 +17,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 OUT=$(mkdir -p "${OUT:-$ROOT/build-release-check}" && cd "${OUT:-$ROOT/build-release-check}" && pwd)
 FUZZ_SECONDS=${FUZZ_SECONDS:-300}
 JOBS=${JOBS:-$(nproc)}
+MVN=${MVN:-mvn}
 STAGES=("$@")
 [ ${#STAGES[@]} -eq 0 ] && STAGES=(unit fuzz conformance python)
 
@@ -49,7 +51,7 @@ stage_fuzz() {
         -DCMAKE_CXX_FLAGS="-g -O1 $SANITIZERS -fsanitize=fuzzer-no-link" -DCMAKE_EXE_LINKER_FLAGS="$SANITIZERS" \
         > "$b.cmake.log" 2>&1 || fail "fuzz: configure (see $b.cmake.log)"
     local targets=(fuzzdecoder fuzzdecoder_logging fuzzoutstation fuzzmaster fuzzoutstation_session fuzzmaster_session
-        fuzzroundtrip fuzzroundtrip_events)
+        fuzzroundtrip fuzzroundtrip_events fuzzroundtrip_commands)
     cmake --build "$b" --parallel "$JOBS" --target "${targets[@]}" > "$b.build.log" 2>&1 \
         || fail "fuzz: build (see $b.build.log)"
 
@@ -75,7 +77,7 @@ run_dnp3c() {
     log "conformance: $rev $tag"
     (cd "$ROOT/conformance" && YADNP3_ABSENT=$absent \
         YADNP3_OUTSTATION=$OUT/conformance-build/cpp/tests/conformance/conformance-outstation \
-        mvn -q -B compile scala:run -DlauncherId=conformance -Dconformance.revision="$rev" \
+        "$MVN" -q -B compile scala:run -DlauncherId=conformance -Dconformance.revision="$rev" \
         -Dconformance.config="$config" -Dconformance.run=all) > "$OUT/conformance-$rev-$tag.log" 2>&1 \
         || fail "conformance: $rev $tag (see $OUT/conformance-$rev-$tag.log and conformance/results)"
     grep -E 'Passed procedure' -c "$OUT/conformance-$rev-$tag.log" | sed "s/^/    passed: /"

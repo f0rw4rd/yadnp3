@@ -51,3 +51,7 @@ target_link_libraries(fuzzroundtrip PRIVATE dnp3mocks)
 add_fuzzer(fuzzroundtrip_events ./fuzzroundtrip_events.cpp ${fuzz_test_utils})
 target_include_directories(fuzzroundtrip_events PRIVATE ../unit ../../lib/src)
 target_link_libraries(fuzzroundtrip_events PRIVATE dnp3mocks)
+
+add_fuzzer(fuzzroundtrip_commands ./fuzzroundtrip_commands.cpp ${fuzz_test_utils})
+target_include_directories(fuzzroundtrip_commands PRIVATE ../unit ../../lib/src)
+target_link_libraries(fuzzroundtrip_commands PRIVATE dnp3mocks)
