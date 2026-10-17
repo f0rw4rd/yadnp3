@@ -45,7 +45,7 @@ UpdateKey::UpdateKey(uint8_t repeat, KeyWrapAlgorithm algorithm) : m_algorithm(a
     m_buffer.fill(repeat);
 }
 
-UpdateKey::UpdateKey(const ser4cpp::rseq_t& key) : m_algorithm(KeyWrapAlgorithm::UNDEFINED), m_size(0)
+UpdateKey::UpdateKey(const Buffer& key) : m_algorithm(KeyWrapAlgorithm::UNDEFINED), m_size(0)
 {
     m_buffer.fill(0);
     Initialize(key);
@@ -53,12 +53,12 @@ UpdateKey::UpdateKey(const ser4cpp::rseq_t& key) : m_algorithm(KeyWrapAlgorithm:
 
 UpdateKey::View UpdateKey::GetView() const
 {
-    return View(m_algorithm, ser4cpp::rseq_t(m_buffer.data(), m_size));
+    return View(m_algorithm, Buffer(m_buffer.data(), m_size));
 }
 
-bool UpdateKey::Initialize(const ser4cpp::rseq_t& key)
+bool UpdateKey::Initialize(const Buffer& key)
 {
-    auto algo = GetKeyWrapAlgorithm(static_cast<uint32_t>(key.length()));
+    auto algo = GetKeyWrapAlgorithm(static_cast<uint32_t>(key.length));
     if (algo == KeyWrapAlgorithm::UNDEFINED)
     {
         m_algorithm = KeyWrapAlgorithm::UNDEFINED;
@@ -67,8 +67,8 @@ bool UpdateKey::Initialize(const ser4cpp::rseq_t& key)
     }
 
     m_algorithm = algo;
-    m_size = static_cast<uint8_t>(key.length());
-    std::memcpy(m_buffer.data(), key, m_size);
+    m_size = static_cast<uint8_t>(key.length);
+    std::memcpy(m_buffer.data(), key.data, m_size);
     return true;
 }
 

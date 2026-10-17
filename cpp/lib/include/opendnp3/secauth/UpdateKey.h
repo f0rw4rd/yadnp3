@@ -18,8 +18,7 @@
 #define OPENDNP3_UPDATEKEY_H
 
 #include "opendnp3/gen/KeyWrapAlgorithm.h"
-
-#include <ser4cpp/container/SequenceTypes.h>
+#include "opendnp3/util/Buffer.h"
 
 #include <array>
 #include <cstdint>
@@ -42,10 +41,10 @@ public:
     struct View
     {
         View() : algorithm(KeyWrapAlgorithm::UNDEFINED) {}
-        View(KeyWrapAlgorithm algorithm_, ser4cpp::rseq_t key_) : algorithm(algorithm_), data(key_) {}
+        View(KeyWrapAlgorithm algorithm_, Buffer key_) : algorithm(algorithm_), data(key_) {}
 
         KeyWrapAlgorithm algorithm;
-        ser4cpp::rseq_t data;
+        Buffer data;
     };
 
     /// Construct an invalid (undefined) key
@@ -55,7 +54,7 @@ public:
     UpdateKey(uint8_t repeat, KeyWrapAlgorithm algorithm);
 
     /// Construct from raw key data. Key size determines the algorithm.
-    explicit UpdateKey(const ser4cpp::rseq_t& key);
+    explicit UpdateKey(const Buffer& key);
 
     /// Get a read-only view of the key
     View GetView() const;
@@ -71,7 +70,7 @@ public:
      * Only accepts 128-bit (16 byte) or 256-bit (32 byte) keys.
      * @return true if key size was valid, false otherwise
      */
-    bool Initialize(const ser4cpp::rseq_t& key);
+    bool Initialize(const Buffer& key);
 
 private:
     static KeyWrapAlgorithm GetKeyWrapAlgorithm(uint32_t size);

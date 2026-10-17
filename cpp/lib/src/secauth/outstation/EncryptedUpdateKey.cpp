@@ -86,7 +86,8 @@ bool EncryptedUpdateKey::DecryptAndVerify(IKeyWrapAlgo& algorithm,
     }
 
     // We're fully authenticated so this data is the key
-    updateKey = UpdateKey(unwrapped.take(keySize));
+    const auto keyData = unwrapped.take(keySize);
+    updateKey = UpdateKey(Buffer(keyData, keyData.length()));
 
     return true;
 }
