@@ -22,7 +22,8 @@ STAGES=("$@")
 [ ${#STAGES[@]} -eq 0 ] && STAGES=(unit fuzz conformance python)
 
 SANITIZERS="-fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer"
-export ASAN_OPTIONS=${ASAN_OPTIONS:-detect_leaks=0:abort_on_error=1}
+# leaks fail the unit and fuzz stages: the test fixtures clear their MockExecutor, so none is expected
+export ASAN_OPTIONS=${ASAN_OPTIONS:-detect_leaks=1:abort_on_error=1}
 export UBSAN_OPTIONS=${UBSAN_OPTIONS:-print_stacktrace=1:halt_on_error=1}
 
 log() { echo "==> $*"; }
