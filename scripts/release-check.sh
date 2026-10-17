@@ -94,14 +94,13 @@ stage_conformance() {
         || fail "conformance: build (see $b.build.log)"
 
     local ini=$ROOT/conformance/device.ini
-    # level 1 has no frozen counters; level 3 needs the packed double-bit variation (g3v1), which the library lacks
+    # level 1 has no frozen counters
     sed -e 's/^outstation.subset.level = 2/outstation.subset.level = 1/' \
         -e 's/^supports.frozenCounter = true/supports.frozenCounter = false/' \
         -e 's/^supports.disable.frozenCounter = true/supports.disable.frozenCounter = false/' \
         -e 's/^supports.frozenCounterChangeEvents = true/supports.frozenCounterChangeEvents = false/' \
         "$ini" > "$OUT/device-l1.ini"
     sed -e 's/^outstation.subset.level = 2/outstation.subset.level = 3/' "$ini" > "$OUT/device-l3.ini"
-    echo "test.exclude.3.1r1/8.24.2b = no packed double-bit input variation (g3v1)" >> "$OUT/device-l3.ini"
 
     run_dnp3c 3.1r1 "$ini" L2
     run_dnp3c 3.1r1 "$OUT/device-l1.ini" L1 fcnt

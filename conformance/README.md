@@ -35,7 +35,7 @@ Environment variables:
 
 `device.ini` is for subset level 2. For level 1, set `outstation.subset.level = 1`, turn off `supports.frozenCounter`,
 `supports.disable.frozenCounter` and `supports.frozenCounterChangeEvents`, and run with `YADNP3_ABSENT=fcnt`. For level
-3, set `outstation.subset.level = 3` and exclude 8.24.2b (see below).
+3, set `outstation.subset.level = 3`.
 
 ## What isn't tested
 
@@ -44,7 +44,6 @@ Environment variables:
   filter masters by address, and doesn't use UDP here.
 - The outstation has no self address, confirmed link-layer frames, or device attributes (g0), so `device.ini` turns
   those off.
-- At subset level 3, 8.24.2b fails: the library has no packed double-bit variation (g3v1).
 
 ## License
 

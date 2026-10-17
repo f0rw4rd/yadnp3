@@ -73,6 +73,12 @@ std::string Exact(double value)
     return buf;
 }
 
+// ONLINE alone for an even byte, else the byte's flags
+uint8_t OnlineOr(uint8_t flags)
+{
+    return (flags & 1) ? flags : 0x01;
+}
+
 bool SameDouble(double a, double b)
 {
     return (std::isnan(a) && std::isnan(b)) || a == b;
@@ -98,14 +104,19 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     Reader in(data, size);
 
+    // the packed variations, which report the state alone, or those with flags
+    const uint8_t packed = in.Next<uint8_t>();
     DatabaseConfig database;
     for (uint16_t i = 0; i < NUM; ++i)
     {
-        database.binary_input[i].svariation = StaticBinaryVariation::Group1Var2;
-        database.double_binary[i].svariation = StaticDoubleBinaryVariation::Group3Var2;
+        database.binary_input[i].svariation
+            = (packed & 1) ? StaticBinaryVariation::Group1Var1 : StaticBinaryVariation::Group1Var2;
+        database.double_binary[i].svariation
+            = (packed & 2) ? StaticDoubleBinaryVariation::Group3Var1 : StaticDoubleBinaryVariation::Group3Var2;
         database.counter[i].svariation = StaticCounterVariation::Group20Var1;
         database.analog_input[i].svariation = StaticAnalogVariation::Group30Var6;
-        database.binary_output_status[i].svariation = StaticBinaryOutputStatusVariation::Group10Var2;
+        database.binary_output_status[i].svariation = (packed & 4) ? StaticBinaryOutputStatusVariation::Group10Var1
+                                                                    : StaticBinaryOutputStatusVariation::Group10Var2;
         database.analog_output_status[i].svariation = StaticAnalogOutputStatusVariation::Group40Var4;
         database.octet_string[i].svariation = StaticOctetStringVariation::Group110Var0;
     }
@@ -127,11 +138,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         {
             // the state bit is the value's, so only the other flag bits come from the input
             const bool b = in.Next<uint8_t>() & 1;
-            binaries[i] = Binary(b, Flags((in.Next<uint8_t>() & 0x7F) | (b ? 0x80 : 0)));
+            binaries[i] = Binary(b, Flags((OnlineOr(in.Next<uint8_t>()) & 0x7F) | (b ? 0x80 : 0)));
             db.Update(binaries[i], i, EventMode::Suppress);
 
             const auto dbit = static_cast<DoubleBit>(in.Next<uint8_t>() & 3);
-            doubles[i] = DoubleBitBinary(dbit, Flags(in.Next<uint8_t>() & 0x3F));
+            doubles[i] = DoubleBitBinary(dbit, Flags(OnlineOr(in.Next<uint8_t>()) & 0x3F));
             db.Update(doubles[i], i, EventMode::Suppress);
 
             counters[i] = Counter(in.Next<uint32_t>(), Flags(in.Next<uint8_t>()));
@@ -141,7 +152,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
             db.Update(analogs[i], i, EventMode::Suppress);
 
             const bool o = in.Next<uint8_t>() & 1;
-            boStatus[i] = BinaryOutputStatus(o, Flags((in.Next<uint8_t>() & 0x7F) | (o ? 0x80 : 0)));
+            boStatus[i] = BinaryOutputStatus(o, Flags((OnlineOr(in.Next<uint8_t>()) & 0x7F) | (o ? 0x80 : 0)));
             db.Update(boStatus[i], i, EventMode::Suppress);
 
             aoStatus[i] = AnalogOutputStatus(in.Next<double>(), Flags(in.Next<uint8_t>()));
