@@ -32,7 +32,7 @@ struct MasterAuthStackConfig
     MasterAuthStackConfig() = default;
 
     MasterParams master;
-    LinkConfig link{true, false};
+    LinkConfig link{true};
     MasterAuthSettings auth;
 };
 
