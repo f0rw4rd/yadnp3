@@ -43,7 +43,8 @@ public enum MasterTaskType
   LAN_TIME_SYNC(5),
   ENABLE_UNSOLICITED(6),
   AUTO_EVENT_SCAN(7),
-  USER_TASK(8);
+  USER_TASK(8),
+  SET_SESSION_KEYS(9);
 
   private final int id;
 
@@ -79,6 +80,8 @@ public enum MasterTaskType
         return AUTO_EVENT_SCAN;
       case(8):
         return USER_TASK;
+      case(9):
+        return SET_SESSION_KEYS;
       default:
         return CLEAR_RESTART;
     }

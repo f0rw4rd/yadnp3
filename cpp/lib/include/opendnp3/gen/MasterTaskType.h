@@ -50,7 +50,8 @@ enum class MasterTaskType : uint8_t
   LAN_TIME_SYNC = 5,
   ENABLE_UNSOLICITED = 6,
   AUTO_EVENT_SCAN = 7,
-  USER_TASK = 8
+  USER_TASK = 8,
+  SET_SESSION_KEYS = 9
 };
 
 struct MasterTaskTypeSpec

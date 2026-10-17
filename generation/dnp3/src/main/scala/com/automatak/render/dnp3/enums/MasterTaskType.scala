@@ -38,7 +38,8 @@ object MasterTaskType {
       "LAN_TIME_SYNC",
       "ENABLE_UNSOLICITED",
       "AUTO_EVENT_SCAN",
-      "USER_TASK"
+      "USER_TASK",
+      "SET_SESSION_KEYS"
     )
   )
 

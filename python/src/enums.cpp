@@ -289,7 +289,8 @@ void init_enums(py::module_& m)
         .value("LAN_TIME_SYNC", MasterTaskType::LAN_TIME_SYNC)
         .value("ENABLE_UNSOLICITED", MasterTaskType::ENABLE_UNSOLICITED)
         .value("AUTO_EVENT_SCAN", MasterTaskType::AUTO_EVENT_SCAN)
-        .value("USER_TASK", MasterTaskType::USER_TASK);
+        .value("USER_TASK", MasterTaskType::USER_TASK)
+        .value("SET_SESSION_KEYS", MasterTaskType::SET_SESSION_KEYS);
 
     // TaskCompletion
     py::enum_<TaskCompletion>(m, "TaskCompletion", "Describes if a master task succeeded or failed")

@@ -61,6 +61,8 @@ MasterTaskType MasterTaskTypeSpec::from_type(uint8_t arg)
       return MasterTaskType::AUTO_EVENT_SCAN;
     case(8):
       return MasterTaskType::USER_TASK;
+    case(9):
+      return MasterTaskType::SET_SESSION_KEYS;
     default:
       throw new std::invalid_argument("Unknown value");
   }
@@ -88,6 +90,8 @@ char const* MasterTaskTypeSpec::to_string(MasterTaskType arg)
       return "AUTO_EVENT_SCAN";
     case(MasterTaskType::USER_TASK):
       return "USER_TASK";
+    case(MasterTaskType::SET_SESSION_KEYS):
+      return "SET_SESSION_KEYS";
     default:
       return "UNDEFINED";
   }
@@ -115,6 +119,8 @@ char const* MasterTaskTypeSpec::to_human_string(MasterTaskType arg)
       return "AUTO_EVENT_SCAN";
     case(MasterTaskType::USER_TASK):
       return "USER_TASK";
+    case(MasterTaskType::SET_SESSION_KEYS):
+      return "SET_SESSION_KEYS";
     default:
       return "UNDEFINED";
   }
@@ -131,6 +137,7 @@ MasterTaskType MasterTaskTypeSpec::from_string(const std::string& arg)
   if(arg == "ENABLE_UNSOLICITED") return MasterTaskType::ENABLE_UNSOLICITED;
   if(arg == "AUTO_EVENT_SCAN") return MasterTaskType::AUTO_EVENT_SCAN;
   if(arg == "USER_TASK") return MasterTaskType::USER_TASK;
+  if(arg == "SET_SESSION_KEYS") return MasterTaskType::SET_SESSION_KEYS;
   else throw std::invalid_argument(std::string("Unknown value: ") + arg);
 }
 
