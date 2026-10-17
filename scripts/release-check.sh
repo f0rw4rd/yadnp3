@@ -51,7 +51,7 @@ stage_fuzz() {
         -DCMAKE_CXX_FLAGS="-g -O1 $SANITIZERS -fsanitize=fuzzer-no-link" -DCMAKE_EXE_LINKER_FLAGS="$SANITIZERS" \
         > "$b.cmake.log" 2>&1 || fail "fuzz: configure (see $b.cmake.log)"
     local targets=(fuzzdecoder fuzzdecoder_logging fuzzoutstation fuzzmaster fuzzoutstation_session fuzzmaster_session
-        fuzzroundtrip fuzzroundtrip_events fuzzroundtrip_commands)
+        fuzzroundtrip fuzzroundtrip_events fuzzroundtrip_commands fuzzroundtrip_eventbuffer)
     cmake --build "$b" --parallel "$JOBS" --target "${targets[@]}" > "$b.build.log" 2>&1 \
         || fail "fuzz: build (see $b.build.log)"
 
