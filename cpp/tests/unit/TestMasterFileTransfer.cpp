@@ -187,6 +187,26 @@ TEST_CASE(SUITE("DeleteFile asks with a file command (g70v3)"))
     REQUIRE(t.lower->PopWriteAsHex() == "C0 1B 46 03 5B 01 1B 00 1A 00 01 00 " + zeros + "78");
 }
 
+TEST_CASE(SUITE("WriteDeadBands sends little-endian floats and reports a rejected write"))
+{
+    MasterTestFixture t(NoStartupTasks());
+    t.context->OnLowerLayerUp();
+    std::vector<FileOperationResult> results;
+    t.context->WriteDeadBands({WithIndex(AnalogInputDeadband(1.5), 3)},
+                              [&](const FileOperationResult& r) { results.push_back(r); });
+    t.exe->run_many();
+
+    // g34v3, 2-octet count and index: index 3, 1.5f
+    REQUIRE(t.lower->PopWriteAsHex() == "C0 02 22 03 28 01 00 03 00 00 00 C0 3F");
+    t.context->OnTxReady();
+    t.SendToMaster("C0 81 00 04"); // IIN2.2
+    t.exe->run_many();
+
+    REQUIRE(results.size() == 1);
+    REQUIRE(results[0].summary != TaskCompletion::SUCCESS);
+    REQUIRE(results[0].statusCode != FileStatus::SUCCESS);
+}
+
 TEST_CASE(SUITE("GetFileInfo asks with a file descriptor (g70v7)"))
 {
     MasterTestFixture t(NoStartupTasks());

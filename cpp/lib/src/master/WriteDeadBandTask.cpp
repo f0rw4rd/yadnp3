@@ -23,7 +23,7 @@
 
 #include "opendnp3/gen/FunctionCode.h"
 
-#include <cstring>
+#include <ser4cpp/serialization/LittleEndian.h>
 
 namespace opendnp3
 {
@@ -77,10 +77,10 @@ bool WriteDeadBandTask::BuildRequest(APDURequest& request, uint8_t seq)
         indexBuf[1] = static_cast<uint8_t>((idx >> 8) & 0xFF);
         writer.WriteRawBytes(indexBuf, 2);
 
-        // 4-byte float value
+        // 4-byte float value, little-endian whatever the host's byte order
         uint8_t valBuf[4];
-        float fval = static_cast<float>(db.value.value);
-        std::memcpy(valBuf, &fval, 4);
+        ser4cpp::wseq_t valSeq(valBuf, 4);
+        ser4cpp::SingleFloat::write_to(valSeq, static_cast<float>(db.value.value));
         writer.WriteRawBytes(valBuf, 4);
     }
 
@@ -99,7 +99,7 @@ void WriteDeadBandTask::OnTaskComplete(TaskCompletion result, Timestamp /*now*/)
     {
         FileOperationResult res;
         res.summary = result;
-        res.statusCode = FileStatus::SUCCESS;
+        res.statusCode = (result == TaskCompletion::SUCCESS) ? FileStatus::SUCCESS : FileStatus::FATAL;
         callback(res);
     }
 }
