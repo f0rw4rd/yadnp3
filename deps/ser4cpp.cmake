@@ -4,6 +4,8 @@ FetchContent_Declare(
     ser4cpp
     URL      https://github.com/automatak/ser4cpp/archive/3c449734dc530a8f465eb0982de29165cc4e23d5.zip
     URL_HASH SHA1=937B759B7CC80180DA26B47037E796B59798A672
+    # subnormal floats and doubles are serialized wrong: see the script
+    PATCH_COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_LIST_DIR}/ser4cpp-iec559.cmake
 )
 
 FetchContent_GetProperties(ser4cpp)
