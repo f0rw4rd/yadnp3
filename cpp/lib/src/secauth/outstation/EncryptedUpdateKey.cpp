@@ -33,9 +33,17 @@ bool EncryptedUpdateKey::DecryptAndVerify(IKeyWrapAlgo& algorithm,
                                           const ser4cpp::rseq_t& encryptedData,
                                           const std::string& username,
                                           const ser4cpp::rseq_t& outstationChallengeData,
+                                          size_t keySize,
                                           UpdateKey& updateKey,
                                           std::error_code& ec)
 {
+    // an AES-128 or AES-256 key: the size was taken to be 32, so AES-128 keys never verified
+    if (keySize != AuthSizes::MIN_UPDATE_KEY_SIZE_BYTES && keySize != AuthSizes::MAX_UPDATE_KEY_SIZE_BYTES)
+    {
+        ec = make_error_code(OutstationError::BAD_UNWRAPPPED_UPDATE_KEY_DATA_SIZE);
+        return false;
+    }
+
     // Buffer for the decrypted data
     std::array<uint8_t, AuthSizes::MAX_UPDATE_KEY_UNWRAP_BUFFER_SIZE> buffer;
     ser4cpp::wseq_t dest(buffer.data(), buffer.size());
@@ -47,7 +55,7 @@ bool EncryptedUpdateKey::DecryptAndVerify(IKeyWrapAlgo& algorithm,
         return false;
     }
 
-    const auto MIN_UNWRAPPED_SIZE = username.size() + AuthSizes::MAX_UPDATE_KEY_SIZE_BYTES;
+    const auto MIN_UNWRAPPED_SIZE = username.size() + keySize + outstationChallengeData.length();
 
     if (unwrapped.length() < MIN_UNWRAPPED_SIZE)
     {
@@ -69,7 +77,7 @@ bool EncryptedUpdateKey::DecryptAndVerify(IKeyWrapAlgo& algorithm,
 
     // Next locate the challenge data, which is whatever is after the key
     // Remove any padding by truncating to the size of the expected challenge
-    auto challengeData = unwrapped.skip(AuthSizes::MAX_UPDATE_KEY_SIZE_BYTES).take(outstationChallengeData.length());
+    auto challengeData = unwrapped.skip(keySize).take(outstationChallengeData.length());
 
     if (!SecureEquals(challengeData, outstationChallengeData))
     {
@@ -78,7 +86,7 @@ bool EncryptedUpdateKey::DecryptAndVerify(IKeyWrapAlgo& algorithm,
     }
 
     // We're fully authenticated so this data is the key
-    updateKey = UpdateKey(unwrapped.take(AuthSizes::MAX_UPDATE_KEY_SIZE_BYTES));
+    updateKey = UpdateKey(unwrapped.take(keySize));
 
     return true;
 }

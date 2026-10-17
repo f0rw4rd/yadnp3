@@ -42,6 +42,7 @@ struct EncryptedUpdateKey
      * @param encryptedData The encrypted blob from the authority
      * @param username   The expected username embedded in the blob
      * @param outstationChallengeData The challenge data sent by the outstation
+     * @param keySize    The size of the update key: 16 for AES-128, 32 for AES-256
      * @param updateKey  [out] The decrypted update key on success
      * @param ec         [out] Error code on failure
      * @return true if decryption and verification succeeded
@@ -51,6 +52,7 @@ struct EncryptedUpdateKey
                                  const ser4cpp::rseq_t& encryptedData,
                                  const std::string& username,
                                  const ser4cpp::rseq_t& outstationChallengeData,
+                                 size_t keySize,
                                  UpdateKey& updateKey,
                                  std::error_code& ec);
 };
