@@ -82,6 +82,10 @@ for i in range(8):
 # the confirms)
 for i in range(8):
     write('fuzzroundtrip_eventbuffer', f'seed{i}', bytes([i]) + bytes(rng.randrange(256) for _ in range(40)))
+# fuzzroundtrip_unsolicited: a buffer size byte, then changes, exchanges (0x04 loses the unsolicited confirms) and
+# confirm timeouts
+for i in range(8):
+    write('fuzzroundtrip_unsolicited', f'seed{i}', bytes([i]) + bytes(rng.randrange(256) for _ in range(40)))
 # fuzzroundtrip_commands: a mode byte (kind of command, select-before-operate or not), then the commands
 for mode in range(16):
     write('fuzzroundtrip_commands', f'seed{mode}', bytes([mode]) + bytes(rng.randrange(256) for _ in range(48)))
