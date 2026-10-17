@@ -42,8 +42,15 @@ bool ChallengeState::WriteChallenge(const ser4cpp::rseq_t& fragment,
                                     ICryptoProvider& crypto,
                                     Logger* pLogger)
 {
-    // Store the critical ASDU
-    criticalASDU.Set(fragment);
+    // Store the critical ASDU: a request too large to store can't be authorized later, so it isn't challenged, and
+    // any earlier challenge is void
+    this->challengeFragment = ser4cpp::rseq_t::empty();
+    if (!criticalASDU.Set(fragment))
+    {
+        criticalASDU.Clear();
+        SIMPLE_LOGGER_BLOCK(pLogger, flags::ERR, "Critical request too large to challenge");
+        return false;
+    }
 
     // Configure the response
     response.SetFunction(FunctionCode::AUTH_RESPONSE);
@@ -89,6 +96,15 @@ bool ChallengeState::VerifyAuthenticity(const ser4cpp::rseq_t& key,
                                         const ser4cpp::rseq_t& hmac,
                                         Logger logger)
 {
+    // a challenge authorizes one reply, right or wrong: a reply seen again is a replay
+    const auto fragment = this->challengeFragment;
+    this->challengeFragment = ser4cpp::rseq_t::empty();
+    if (fragment.is_empty() || !criticalASDU.IsSet())
+    {
+        SIMPLE_LOG_BLOCK(logger, flags::WARN, "No challenge outstanding");
+        return false;
+    }
+
     if (provider.OutputSize() != hmac.length())
     {
         FORMAT_LOG_BLOCK(logger, flags::WARN, "Received HMAC length of %zu did not match expected HMAC length of %u",
@@ -97,7 +113,7 @@ bool ChallengeState::VerifyAuthenticity(const ser4cpp::rseq_t& key,
     }
 
     std::error_code ec;
-    auto hmacCalc = provider.Compute(key, {challengeFragment, criticalASDU.Get()}, ec);
+    auto hmacCalc = provider.Compute(key, {fragment, criticalASDU.Get()}, ec);
 
     if (ec)
     {
@@ -126,8 +142,9 @@ APDUHeader ChallengeState::GetCriticalHeader() const
     auto data = criticalASDU.Get();
     if (data.length() >= 2)
     {
-        header.function = static_cast<FunctionCode>(data[0]);
-        header.control = AppControlField(data[1]);
+        // a request starts with its application control octet, then its function code
+        header.control = AppControlField(data[0]);
+        header.function = static_cast<FunctionCode>(data[1]);
     }
     return header;
 }

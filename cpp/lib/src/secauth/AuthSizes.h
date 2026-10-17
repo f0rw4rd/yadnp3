@@ -57,14 +57,19 @@ struct AuthSizes : StaticOnly
     static const uint32_t MAX_MASTER_CHALLENGE_REPLY_FRAG_SIZE = FREE_FORMAT_HEADER_SIZE + 32 + MAX_HMAC_TRUNC_SIZE;
 
     /// Maximum size of an outstation challenge response fragment
-    /// 2 (APDU header) + 6 (free-format header) + Group120Var1 max size
+    /// 4 (response header, with the IIN) + 6 (free-format header) + Group120Var1 max size
     /// Group120Var1: seqNum(4) + user(2) + hmacAlgo(1) + reason(1) + challengeData(up to 64)
     static const uint32_t MAX_OUTSTATION_CHALLENGE_RESPONSE_FRAGMENT_SIZE
-        = 2 + 6 + 4 + 2 + 1 + 1 + MAX_CHALLENGE_DATA_SIZE;
+        = 4 + 6 + 4 + 2 + 1 + 1 + MAX_CHALLENGE_DATA_SIZE;
 
     static uint32_t GetBoundedSessionKeySize(uint32_t size)
     {
-        return std::max(MIN_SESSION_KEY_SIZE_BYTES, std::min(size, MAX_SESSION_KEY_SIZE_BYTES));
+        // no std::min/max, which would odr-use the constants (see GetBoundedChallengeSize)
+        if (size < MIN_SESSION_KEY_SIZE_BYTES)
+        {
+            return MIN_SESSION_KEY_SIZE_BYTES;
+        }
+        return (size > MAX_SESSION_KEY_SIZE_BYTES) ? MAX_SESSION_KEY_SIZE_BYTES : size;
     }
 
     static bool SessionKeySizeWithinLimits(uint32_t size)

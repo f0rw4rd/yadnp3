@@ -42,6 +42,7 @@ set(unittests_src
     ./TestMaster.cpp
     ./TestMasterAssignClass.cpp
     ./TestMasterCommandRequests.cpp
+    ./TestChallengeState.cpp
     ./TestEventTriggers.cpp
     ./TestFloatSerialization.cpp
     ./TestKeyWrap.cpp
