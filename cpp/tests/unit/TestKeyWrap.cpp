@@ -17,6 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "crypto/AESKeyWrap.h"
 #include "secauth/master/KeyWrap.h"
 
 #include <catch.hpp>
@@ -65,4 +66,20 @@ TEST_CASE(SUITE("Wrap refuses key status data that doesn't fit"))
 
     REQUIRE_FALSE(buffer.Wrap(algo, ser4cpp::rseq_t(updateKey.data(), updateKey.size()), keys,
                               ser4cpp::rseq_t(keyStatus.data(), keyStatus.size()), logger));
+}
+
+TEST_CASE(SUITE("Wrap takes the largest key status that fits"))
+{
+    AESKeyWrap algo;
+    KeyWrapBuffer buffer;
+    const std::vector<uint8_t> key(32, 0xAA);
+    const std::vector<uint8_t> updateKey(16, 0x01);
+    // the key length, two 32-byte keys and the key status fill the buffer to wrap: the wrapped data is 8 bytes more
+    const std::vector<uint8_t> keyStatus(AuthSizes::MAX_SESSION_KEY_WRAP_BUFFER_SIZE - 2 - 64, 0x41);
+    const SessionKeysView keys(ser4cpp::rseq_t(key.data(), key.size()), ser4cpp::rseq_t(key.data(), key.size()));
+    const Logger logger(nullptr, ModuleId(), "test", LogLevels::everything());
+
+    REQUIRE(buffer.Wrap(algo, ser4cpp::rseq_t(updateKey.data(), updateKey.size()), keys,
+                        ser4cpp::rseq_t(keyStatus.data(), keyStatus.size()), logger));
+    REQUIRE(buffer.GetWrappedData().length() == AuthSizes::MAX_SESSION_KEY_WRAP_BUFFER_SIZE + 8);
 }

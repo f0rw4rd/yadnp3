@@ -51,7 +51,8 @@ public:
 
 private:
     ser4cpp::rseq_t data;
-    std::array<uint8_t, AuthSizes::MAX_SESSION_KEY_WRAP_BUFFER_SIZE> buffer;
+    // RFC 3394 key wrap adds 8 bytes to the data it wraps
+    std::array<uint8_t, AuthSizes::MAX_SESSION_KEY_WRAP_BUFFER_SIZE + 8> buffer;
 };
 
 } // namespace opendnp3
