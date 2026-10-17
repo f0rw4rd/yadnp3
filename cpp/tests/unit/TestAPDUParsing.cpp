@@ -460,3 +460,18 @@ TEST_CASE(SUITE("can parse 0x17 and 0x28 qualifers as collection of indices"))
     // g1v1 0x28 (count == 2) addresses == {42, 255}
     TestComplex("01 02 28 02 00 2A 00 FF 00", ParseResult::OK, 1, validator, ParserSettings::NoContents());
 }
+TEST_CASE(SUITE("Parses a session key status request"))
+{
+    TestComplex("78 04 07 01 01 00", ParseResult::OK, 1, [](MockApduHeaderHandler& mock) {
+        REQUIRE(mock.keyStatusRequests == std::vector<uint16_t>{1});
+    });
+}
+
+TEST_CASE(SUITE("Parses an aggressive mode request"))
+{
+    TestComplex("78 03 07 01 07 00 00 00 02 00", ParseResult::OK, 1, [](MockApduHeaderHandler& mock) {
+        REQUIRE(mock.aggressiveModeRequests.size() == 1);
+        REQUIRE(mock.aggressiveModeRequests[0].challengeSeqNum == 7);
+        REQUIRE(mock.aggressiveModeRequests[0].userNum == 2);
+    });
+}

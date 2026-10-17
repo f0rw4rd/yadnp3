@@ -60,16 +60,14 @@ TEST_CASE(SUITE("accepts matching free-format g120v1 data"))
     REQUIRE(handler.records.size() == 1);
 }
 
-// g120v4 (Session Key Status Request) uses UINT8_CNT qualifier (0x07).
-// The CountParser doesn't currently have a mapping for g120v4, so it returns
-// INVALID_OBJECT_QUALIFIER. These tests verify the current behavior; when
-// g120v4 count parsing is wired, update to expect ParseResult::OK.
+// g120v4 (Session Key Status Request) uses UINT8_CNT qualifier (0x07)
 TEST_CASE(SUITE("g120v4 key status request via count qualifier"))
 {
     HexSequence buffer("78 04 07 01 00 00");
     MockApduHeaderHandler handler;
     auto result = APDUParser::Parse(buffer.ToRSeq(), handler, nullptr);
-    REQUIRE(result == ParseResult::INVALID_OBJECT_QUALIFIER);
+    REQUIRE(result == ParseResult::OK);
+    REQUIRE(handler.keyStatusRequests == std::vector<uint16_t>{0});
 }
 
 TEST_CASE(SUITE("g120v4 key status request with userNum=9 via count qualifier"))
@@ -77,7 +75,8 @@ TEST_CASE(SUITE("g120v4 key status request with userNum=9 via count qualifier"))
     HexSequence buffer("78 04 07 01 09 00");
     MockApduHeaderHandler handler;
     auto result = APDUParser::Parse(buffer.ToRSeq(), handler, nullptr);
-    REQUIRE(result == ParseResult::INVALID_OBJECT_QUALIFIER);
+    REQUIRE(result == ParseResult::OK);
+    REQUIRE(handler.keyStatusRequests == std::vector<uint16_t>{9});
 }
 
 // g120v5 (Session Key Status) via free-format qualifier (0x5B) parses successfully

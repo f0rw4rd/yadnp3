@@ -147,6 +147,26 @@ IINField LoggingHandler::ProcessHeader(const CountHeader& /*header*/, const ICol
     return this->PrintTime16(values);
 }
 
+IINField LoggingHandler::ProcessHeader(const CountHeader& /*header*/, const ICollection<Group120Var3>& values)
+{
+    Indent i(*callbacks);
+    auto print = [this](const Group120Var3& value) {
+        FORMAT_LOG_BLOCK(logger, flags::APP_OBJECT_RX, "csq: %u user: %u", value.challengeSeqNum, value.userNum);
+    };
+    values.ForeachItem(print);
+    return IINField::Empty();
+}
+
+IINField LoggingHandler::ProcessHeader(const CountHeader& /*header*/, const ICollection<Group120Var4>& values)
+{
+    Indent i(*callbacks);
+    auto print = [this](const Group120Var4& value) {
+        FORMAT_LOG_BLOCK(logger, flags::APP_OBJECT_RX, "user: %u", value.userNum);
+    };
+    values.ForeachItem(print);
+    return IINField::Empty();
+}
+
 IINField LoggingHandler::ProcessHeader(const RangeHeader& /*header*/, const ICollection<Indexed<IINValue>>& values)
 {
     return this->PrintV(values);

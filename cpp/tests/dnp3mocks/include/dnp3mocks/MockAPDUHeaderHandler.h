@@ -192,6 +192,23 @@ public:
         return this->ProcessAny(header, meas, aoDouble64Requests);
     }
 
+    opendnp3::IINField ProcessHeader(const opendnp3::CountHeader& /*header*/,
+                                     const opendnp3::ICollection<opendnp3::Group120Var3>& values) override
+    {
+        values.ForeachItem([this](const opendnp3::Group120Var3& value) { aggressiveModeRequests.push_back(value); });
+        return opendnp3::IINField::Empty();
+    }
+
+    opendnp3::IINField ProcessHeader(const opendnp3::CountHeader& /*header*/,
+                                     const opendnp3::ICollection<opendnp3::Group120Var4>& values) override
+    {
+        values.ForeachItem([this](const opendnp3::Group120Var4& value) { keyStatusRequests.push_back(value.userNum); });
+        return opendnp3::IINField::Empty();
+    }
+
+    std::vector<opendnp3::Group120Var3> aggressiveModeRequests;
+    std::vector<uint16_t> keyStatusRequests;
+
     std::vector<opendnp3::HeaderRecord> records;
 
     std::vector<opendnp3::Indexed<opendnp3::IINValue>> iinBits;

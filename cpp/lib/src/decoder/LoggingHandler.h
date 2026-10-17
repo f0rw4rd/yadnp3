@@ -106,6 +106,8 @@ private:
     virtual IINField ProcessHeader(const CountHeader& header, const ICollection<Group51Var2>& values) override;
     virtual IINField ProcessHeader(const CountHeader& header, const ICollection<Group52Var1>& values) override;
     virtual IINField ProcessHeader(const CountHeader& header, const ICollection<Group52Var2>& values) override;
+    virtual IINField ProcessHeader(const CountHeader& header, const ICollection<Group120Var3>& values) override;
+    virtual IINField ProcessHeader(const CountHeader& header, const ICollection<Group120Var4>& values) override;
 
     virtual IINField ProcessHeader(const RangeHeader& header, const ICollection<Indexed<IINValue>>& values) override;
     virtual IINField ProcessHeader(const RangeHeader& header, const ICollection<Indexed<Binary>>& values) override;
