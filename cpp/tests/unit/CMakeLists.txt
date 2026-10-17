@@ -67,6 +67,7 @@ set(unittests_src
     ./TestPcapParsing.cpp
     ./TestShiftableBuffer.cpp
 	./TestStaticDataMap.cpp
+	./TestDatabase.cpp
     ./TestTimeDuration.cpp
     ./TestTransportLayer.cpp
     ./TestTypedCommandHeader.cpp
