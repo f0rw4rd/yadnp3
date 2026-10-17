@@ -57,6 +57,18 @@ namespace Automatak.DNP3.Interface
     /// </summary>
     FAILURE_MESSAGE_FORMAT_ERROR = 4,
     /// <summary>
+    /// The task could not run because its user is not defined on the master (SA only)
+    /// </summary>
+    FAILURE_NO_USER = 5,
+    /// <summary>
+    /// The outstation rejected the request for a lack of valid session keys, or an unknown user (SA only)
+    /// </summary>
+    FAILURE_BAD_AUTHENTICATION = 6,
+    /// <summary>
+    /// The outstation rejected the request because its user is not authorized for it (SA only)
+    /// </summary>
+    FAILURE_NOT_AUTHORIZED = 7,
+    /// <summary>
     /// There is no communication with the outstation, so the task was not attempted
     /// </summary>
     FAILURE_NO_COMMS = 255

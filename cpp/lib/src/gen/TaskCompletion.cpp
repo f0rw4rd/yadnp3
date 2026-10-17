@@ -53,6 +53,12 @@ TaskCompletion TaskCompletionSpec::from_type(uint8_t arg)
       return TaskCompletion::FAILURE_START_TIMEOUT;
     case(4):
       return TaskCompletion::FAILURE_MESSAGE_FORMAT_ERROR;
+    case(5):
+      return TaskCompletion::FAILURE_NO_USER;
+    case(6):
+      return TaskCompletion::FAILURE_BAD_AUTHENTICATION;
+    case(7):
+      return TaskCompletion::FAILURE_NOT_AUTHORIZED;
     default:
       return TaskCompletion::FAILURE_NO_COMMS;
   }
@@ -72,6 +78,12 @@ char const* TaskCompletionSpec::to_string(TaskCompletion arg)
       return "FAILURE_START_TIMEOUT";
     case(TaskCompletion::FAILURE_MESSAGE_FORMAT_ERROR):
       return "FAILURE_MESSAGE_FORMAT_ERROR";
+    case(TaskCompletion::FAILURE_NO_USER):
+      return "FAILURE_NO_USER";
+    case(TaskCompletion::FAILURE_BAD_AUTHENTICATION):
+      return "FAILURE_BAD_AUTHENTICATION";
+    case(TaskCompletion::FAILURE_NOT_AUTHORIZED):
+      return "FAILURE_NOT_AUTHORIZED";
     default:
       return "FAILURE_NO_COMMS";
   }
@@ -91,6 +103,12 @@ char const* TaskCompletionSpec::to_human_string(TaskCompletion arg)
       return "FAILURE_START_TIMEOUT";
     case(TaskCompletion::FAILURE_MESSAGE_FORMAT_ERROR):
       return "FAILURE_MESSAGE_FORMAT_ERROR";
+    case(TaskCompletion::FAILURE_NO_USER):
+      return "FAILURE_NO_USER";
+    case(TaskCompletion::FAILURE_BAD_AUTHENTICATION):
+      return "FAILURE_BAD_AUTHENTICATION";
+    case(TaskCompletion::FAILURE_NOT_AUTHORIZED):
+      return "FAILURE_NOT_AUTHORIZED";
     default:
       return "FAILURE_NO_COMMS";
   }
@@ -103,6 +121,9 @@ TaskCompletion TaskCompletionSpec::from_string(const std::string& arg)
   if(arg == "FAILURE_RESPONSE_TIMEOUT") return TaskCompletion::FAILURE_RESPONSE_TIMEOUT;
   if(arg == "FAILURE_START_TIMEOUT") return TaskCompletion::FAILURE_START_TIMEOUT;
   if(arg == "FAILURE_MESSAGE_FORMAT_ERROR") return TaskCompletion::FAILURE_MESSAGE_FORMAT_ERROR;
+  if(arg == "FAILURE_NO_USER") return TaskCompletion::FAILURE_NO_USER;
+  if(arg == "FAILURE_BAD_AUTHENTICATION") return TaskCompletion::FAILURE_BAD_AUTHENTICATION;
+  if(arg == "FAILURE_NOT_AUTHORIZED") return TaskCompletion::FAILURE_NOT_AUTHORIZED;
   else return TaskCompletion::FAILURE_NO_COMMS;
 }
 

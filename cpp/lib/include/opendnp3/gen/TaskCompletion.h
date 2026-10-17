@@ -52,6 +52,12 @@ enum class TaskCompletion : uint8_t
   FAILURE_START_TIMEOUT = 3,
   /// The task failed because the master was unable to format the request
   FAILURE_MESSAGE_FORMAT_ERROR = 4,
+  /// The task could not run because its user is not defined on the master (SA only)
+  FAILURE_NO_USER = 5,
+  /// The outstation rejected the request for a lack of valid session keys, or an unknown user (SA only)
+  FAILURE_BAD_AUTHENTICATION = 6,
+  /// The outstation rejected the request because its user is not authorized for it (SA only)
+  FAILURE_NOT_AUTHORIZED = 7,
   /// There is no communication with the outstation, so the task was not attempted
   FAILURE_NO_COMMS = 255
 };

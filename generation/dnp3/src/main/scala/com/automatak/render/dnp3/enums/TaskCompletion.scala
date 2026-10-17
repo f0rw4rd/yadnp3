@@ -35,7 +35,10 @@ object TaskCompletion {
        EnumValue("FAILURE_BAD_RESPONSE", 1, "A response was received from the outstation, but it was not valid"),
        EnumValue("FAILURE_RESPONSE_TIMEOUT", 2, "The task request did not receive a response within the timeout"),
        EnumValue("FAILURE_START_TIMEOUT", 3, "The start timeout expired before the task could begin running"),
-       EnumValue("FAILURE_MESSAGE_FORMAT_ERROR", 4, "The task failed because the master was unable to format the request")
+       EnumValue("FAILURE_MESSAGE_FORMAT_ERROR", 4, "The task failed because the master was unable to format the request"),
+       EnumValue("FAILURE_NO_USER", 5, "The task could not run because its user is not defined on the master (SA only)"),
+       EnumValue("FAILURE_BAD_AUTHENTICATION", 6, "The outstation rejected the request for a lack of valid session keys, or an unknown user (SA only)"),
+       EnumValue("FAILURE_NOT_AUTHORIZED", 7, "The outstation rejected the request because its user is not authorized for it (SA only)")
   )
 
 }

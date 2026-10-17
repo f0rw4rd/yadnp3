@@ -298,6 +298,9 @@ void init_enums(py::module_& m)
         .value("FAILURE_RESPONSE_TIMEOUT", TaskCompletion::FAILURE_RESPONSE_TIMEOUT)
         .value("FAILURE_START_TIMEOUT", TaskCompletion::FAILURE_START_TIMEOUT)
         .value("FAILURE_MESSAGE_FORMAT_ERROR", TaskCompletion::FAILURE_MESSAGE_FORMAT_ERROR)
+        .value("FAILURE_NO_USER", TaskCompletion::FAILURE_NO_USER)
+        .value("FAILURE_BAD_AUTHENTICATION", TaskCompletion::FAILURE_BAD_AUTHENTICATION)
+        .value("FAILURE_NOT_AUTHORIZED", TaskCompletion::FAILURE_NOT_AUTHORIZED)
         .value("FAILURE_NO_COMMS", TaskCompletion::FAILURE_NO_COMMS);
 
     // CommandPointState
