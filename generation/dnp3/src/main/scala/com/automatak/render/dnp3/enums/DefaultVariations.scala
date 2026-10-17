@@ -31,11 +31,11 @@ object DefaultVariations {
   def enums : List[EnumModel] = List(
 
     create("StaticBinaryVariation", group(1)(1,2)),
-    create("StaticDoubleBinaryVariation", group(3)(2)),
+    create("StaticDoubleBinaryVariation", group(3)(2,1)),
     create("StaticAnalogVariation", group(30)(1,2,3,4,5,6)),
     create("StaticCounterVariation", group(20)(1,2,5,6)),
     create("StaticFrozenCounterVariation", group(21)(1,2,5,6,9,10)),
-    create("StaticBinaryOutputStatusVariation",group(10)(2)),
+    create("StaticBinaryOutputStatusVariation",group(10)(2,1)),
     create("StaticAnalogOutputStatusVariation",group(40)(1,2,3,4)),
     create("StaticTimeAndIntervalVariation", group(50)(4)),
     create("StaticOctetStringVariation", group(110)(0)),

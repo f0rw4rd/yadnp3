@@ -254,11 +254,16 @@ IINField Database::SelectAllImpl(GroupVariation gv)
 
     case (GroupVariation::Group3Var0):
         return select_all<DoubleBitBinarySpec>(this->double_binary);
+    case (GroupVariation::Group3Var1):
+        return select_all<DoubleBitBinarySpec>(this->double_binary, StaticDoubleBinaryVariation::Group3Var1);
     case (GroupVariation::Group3Var2):
         return select_all<DoubleBitBinarySpec>(this->double_binary, StaticDoubleBinaryVariation::Group3Var2);
 
     case (GroupVariation::Group10Var0):
         return select_all<BinaryOutputStatusSpec>(this->binary_output_status);
+    case (GroupVariation::Group10Var1):
+        return select_all<BinaryOutputStatusSpec>(this->binary_output_status,
+                                                  StaticBinaryOutputStatusVariation::Group10Var1);
     case (GroupVariation::Group10Var2):
         return select_all<BinaryOutputStatusSpec>(this->binary_output_status,
                                                   StaticBinaryOutputStatusVariation::Group10Var2);
@@ -344,11 +349,16 @@ IINField Database::SelectRangeImpl(GroupVariation gv, const Range& range)
 
     case (GroupVariation::Group3Var0):
         return select_range<DoubleBitBinarySpec>(this->double_binary, range);
+    case (GroupVariation::Group3Var1):
+        return select_range<DoubleBitBinarySpec>(this->double_binary, range, StaticDoubleBinaryVariation::Group3Var1);
     case (GroupVariation::Group3Var2):
         return select_range<DoubleBitBinarySpec>(this->double_binary, range, StaticDoubleBinaryVariation::Group3Var2);
 
     case (GroupVariation::Group10Var0):
         return select_range<BinaryOutputStatusSpec>(this->binary_output_status, range);
+    case (GroupVariation::Group10Var1):
+        return select_range<BinaryOutputStatusSpec>(this->binary_output_status, range,
+                                                    StaticBinaryOutputStatusVariation::Group10Var1);
     case (GroupVariation::Group10Var2):
         return select_range<BinaryOutputStatusSpec>(this->binary_output_status, range,
                                                     StaticBinaryOutputStatusVariation::Group10Var2);
@@ -435,11 +445,15 @@ IINField Database::SelectIndicesImpl(GroupVariation gv, const ICollection<uint16
 
     case (GroupVariation::Group3Var0):
         return select_indices(this->double_binary, indices);
+    case (GroupVariation::Group3Var1):
+        return select_indices(this->double_binary, indices, StaticDoubleBinaryVariation::Group3Var1);
     case (GroupVariation::Group3Var2):
         return select_indices(this->double_binary, indices, StaticDoubleBinaryVariation::Group3Var2);
 
     case (GroupVariation::Group10Var0):
         return select_indices(this->binary_output_status, indices);
+    case (GroupVariation::Group10Var1):
+        return select_indices(this->binary_output_status, indices, StaticBinaryOutputStatusVariation::Group10Var1);
     case (GroupVariation::Group10Var2):
         return select_indices(this->binary_output_status, indices, StaticBinaryOutputStatusVariation::Group10Var2);
 

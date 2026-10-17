@@ -39,7 +39,8 @@ namespace opendnp3 {
 
 enum class StaticDoubleBinaryVariation : uint8_t
 {
-  Group3Var2 = 0
+  Group3Var2 = 0,
+  Group3Var1 = 1
 };
 
 struct StaticDoubleBinaryVariationSpec

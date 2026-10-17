@@ -64,10 +64,8 @@ bool LoadWithRangeIterator(StaticDataMap<Spec>& map,
     return true;
 }
 
-template<class Spec, class IndexType>
-bool LoadWithBitfieldIterator(StaticDataMap<Spec>& map,
-                              BitfieldRangeWriteIterator<IndexType>& iter,
-                              typename Spec::static_variation_t variation)
+template<class Spec, class Iterator>
+bool LoadWithBitfieldIterator(StaticDataMap<Spec>& map, Iterator& iter, typename Spec::static_variation_t variation)
 {
     auto next_index = map.get_selected_range().start;
 
@@ -104,12 +102,28 @@ template<class Spec, class GV> bool WriteSingleBitfield(StaticDataMap<Spec>& map
     {
         auto write_iter = writer.IterateOverSingleBitfield<ser4cpp::UInt8>(GV::ID(), QualifierCode::UINT8_START_STOP,
                                                                            static_cast<uint8_t>(range.start));
-        return LoadWithBitfieldIterator<Spec, ser4cpp::UInt8>(map, write_iter, GV::svariation);
+        return LoadWithBitfieldIterator<Spec>(map, write_iter, GV::svariation);
     }
 
     auto write_iter
         = writer.IterateOverSingleBitfield<ser4cpp::UInt16>(GV::ID(), QualifierCode::UINT16_START_STOP, range.start);
-    return LoadWithBitfieldIterator<Spec, ser4cpp::UInt16>(map, write_iter, GV::svariation);
+    return LoadWithBitfieldIterator<Spec>(map, write_iter, GV::svariation);
+}
+
+template<class Spec, class GV> bool WriteDoubleBitfield(StaticDataMap<Spec>& map, HeaderWriter& writer)
+{
+    const auto range = map.get_selected_range();
+
+    if (range.IsOneByte())
+    {
+        auto write_iter = writer.IterateOverDoubleBitfield<ser4cpp::UInt8>(GV::ID(), QualifierCode::UINT8_START_STOP,
+                                                                           static_cast<uint8_t>(range.start));
+        return LoadWithBitfieldIterator<Spec>(map, write_iter, GV::svariation);
+    }
+
+    auto write_iter
+        = writer.IterateOverDoubleBitfield<ser4cpp::UInt16>(GV::ID(), QualifierCode::UINT16_START_STOP, range.start);
+    return LoadWithBitfieldIterator<Spec>(map, write_iter, GV::svariation);
 }
 
 template<class Spec, class Serializer> bool WriteWithSerializer(StaticDataMap<Spec>& map, HeaderWriter& writer)
@@ -143,6 +157,8 @@ static_write_func_t<DoubleBitBinarySpec> StaticWriters::get(StaticDoubleBinaryVa
 {
     switch (variation)
     {
+    case (StaticDoubleBinaryVariation::Group3Var1):
+        return &WriteDoubleBitfield<DoubleBitBinarySpec, Group3Var1>;
     case (StaticDoubleBinaryVariation::Group3Var2):
         return &WriteWithSerializer<DoubleBitBinarySpec, Group3Var2>;
     default:
@@ -213,6 +229,8 @@ static_write_func_t<BinaryOutputStatusSpec> StaticWriters::get(StaticBinaryOutpu
 {
     switch (variation)
     {
+    case (StaticBinaryOutputStatusVariation::Group10Var1):
+        return &WriteSingleBitfield<BinaryOutputStatusSpec, Group10Var1>;
     case (StaticBinaryOutputStatusVariation::Group10Var2):
         return &WriteWithSerializer<BinaryOutputStatusSpec, Group10Var2>;
     default:

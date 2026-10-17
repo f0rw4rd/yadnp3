@@ -763,7 +763,8 @@ void init_enums(py::module_& m)
     // StaticBinaryOutputStatusVariation
     py::enum_<StaticBinaryOutputStatusVariation>(m, "StaticBinaryOutputStatusVariation",
                                                  "Static reporting variation for binary output status")
-        .value("Group10Var2", StaticBinaryOutputStatusVariation::Group10Var2);
+        .value("Group10Var2", StaticBinaryOutputStatusVariation::Group10Var2)
+        .value("Group10Var1", StaticBinaryOutputStatusVariation::Group10Var1);
 
     // StaticCounterVariation
     py::enum_<StaticCounterVariation>(m, "StaticCounterVariation", "Static reporting variation for counter values")
@@ -775,7 +776,8 @@ void init_enums(py::module_& m)
     // StaticDoubleBinaryVariation
     py::enum_<StaticDoubleBinaryVariation>(m, "StaticDoubleBinaryVariation",
                                            "Static reporting variation for double bit binary values")
-        .value("Group3Var2", StaticDoubleBinaryVariation::Group3Var2);
+        .value("Group3Var2", StaticDoubleBinaryVariation::Group3Var2)
+        .value("Group3Var1", StaticDoubleBinaryVariation::Group3Var1);
 
     // StaticFrozenCounterVariation
     py::enum_<StaticFrozenCounterVariation>(m, "StaticFrozenCounterVariation",

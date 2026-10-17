@@ -67,6 +67,11 @@ public:
                                                               const DNP3Serializer<WriteType>& serializer);
 
     template<class IndexType>
+    BitfieldRangeWriteIterator<IndexType, 2> IterateOverDoubleBitfield(GroupVariationID id,
+                                                                       QualifierCode qc,
+                                                                       typename IndexType::type_t start);
+
+    template<class IndexType>
     BitfieldRangeWriteIterator<IndexType> IterateOverSingleBitfield(GroupVariationID id,
                                                                     QualifierCode qc,
                                                                     typename IndexType::type_t start);
@@ -235,6 +240,20 @@ BitfieldRangeWriteIterator<IndexType> HeaderWriter::IterateOverSingleBitfield(Gr
     }
     else
         return BitfieldRangeWriteIterator<IndexType>::Null();
+}
+
+template<class IndexType>
+BitfieldRangeWriteIterator<IndexType, 2> HeaderWriter::IterateOverDoubleBitfield(GroupVariationID id,
+                                                                                 QualifierCode qc,
+                                                                                 typename IndexType::type_t start)
+{
+    const auto reserve_size = 2 * IndexType::size + 1; // need at least 1 byte
+    if (this->WriteHeaderWithReserve(id, qc, reserve_size))
+    {
+        return BitfieldRangeWriteIterator<IndexType, 2>(start, *position);
+    }
+    else
+        return BitfieldRangeWriteIterator<IndexType, 2>::Null();
 }
 
 template<class PrefixType, class WriteType>

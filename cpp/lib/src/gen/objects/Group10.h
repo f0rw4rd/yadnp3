@@ -50,6 +50,7 @@ struct Group10Var0
 struct Group10Var1
 {
   static GroupVariationID ID() { return GroupVariationID(10,1); }
+  static const StaticBinaryOutputStatusVariation svariation = StaticBinaryOutputStatusVariation::Group10Var1;
 };
 
 // Binary Output - Output Status With Flags

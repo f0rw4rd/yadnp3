@@ -50,6 +50,12 @@ template<>
 StaticFrozenCounterVariation check_for_promotion<FrozenCounterSpec>(const FrozenCounter& value,
                                                                     StaticFrozenCounterVariation variation);
 template<> StaticAnalogVariation check_for_promotion<AnalogSpec>(const Analog& value, StaticAnalogVariation variation);
+template<>
+StaticDoubleBinaryVariation check_for_promotion<DoubleBitBinarySpec>(const DoubleBitBinary& value,
+                                                                     StaticDoubleBinaryVariation variation);
+template<>
+StaticBinaryOutputStatusVariation check_for_promotion<BinaryOutputStatusSpec>(const BinaryOutputStatus& value,
+                                                                              StaticBinaryOutputStatusVariation variation);
 
 template<class Spec> class StaticDataMap : private Uncopyable
 {

@@ -45,6 +45,8 @@ StaticDoubleBinaryVariation StaticDoubleBinaryVariationSpec::from_type(uint8_t a
   {
     case(0):
       return StaticDoubleBinaryVariation::Group3Var2;
+    case(1):
+      return StaticDoubleBinaryVariation::Group3Var1;
     default:
       throw new std::invalid_argument("Unknown value");
   }
@@ -56,6 +58,8 @@ char const* StaticDoubleBinaryVariationSpec::to_string(StaticDoubleBinaryVariati
   {
     case(StaticDoubleBinaryVariation::Group3Var2):
       return "Group3Var2";
+    case(StaticDoubleBinaryVariation::Group3Var1):
+      return "Group3Var1";
     default:
       return "UNDEFINED";
   }
@@ -67,6 +71,8 @@ char const* StaticDoubleBinaryVariationSpec::to_human_string(StaticDoubleBinaryV
   {
     case(StaticDoubleBinaryVariation::Group3Var2):
       return "Group3Var2";
+    case(StaticDoubleBinaryVariation::Group3Var1):
+      return "Group3Var1";
     default:
       return "UNDEFINED";
   }
@@ -75,6 +81,7 @@ char const* StaticDoubleBinaryVariationSpec::to_human_string(StaticDoubleBinaryV
 StaticDoubleBinaryVariation StaticDoubleBinaryVariationSpec::from_string(const std::string& arg)
 {
   if(arg == "Group3Var2") return StaticDoubleBinaryVariation::Group3Var2;
+  if(arg == "Group3Var1") return StaticDoubleBinaryVariation::Group3Var1;
   else throw std::invalid_argument(std::string("Unknown value: ") + arg);
 }
 

@@ -39,7 +39,8 @@ namespace opendnp3 {
 
 enum class StaticBinaryOutputStatusVariation : uint8_t
 {
-  Group10Var2 = 0
+  Group10Var2 = 0,
+  Group10Var1 = 1
 };
 
 struct StaticBinaryOutputStatusVariationSpec

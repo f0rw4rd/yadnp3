@@ -29,12 +29,13 @@
 // limitations under the License.
 //
 
-namespace Automatak.DNP3.Interface
+namespace Step Function I/O.DNP3.Interface
 {
   /// <summary>
   /// </summary>
   public enum StaticBinaryOutputStatusVariation : byte
   {
-    Group10Var2 = 0
+    Group10Var2 = 0,
+    Group10Var1 = 1
   }
 }

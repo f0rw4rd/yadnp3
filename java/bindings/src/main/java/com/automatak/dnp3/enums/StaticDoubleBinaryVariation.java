@@ -34,7 +34,8 @@ package com.automatak.dnp3.enums;
 */
 public enum StaticDoubleBinaryVariation
 {
-  Group3Var2(0);
+  Group3Var2(0),
+  Group3Var1(1);
 
   private final int id;
 
@@ -54,6 +55,8 @@ public enum StaticDoubleBinaryVariation
     {
       case(0):
         return Group3Var2;
+      case(1):
+        return Group3Var1;
       default:
         return Group3Var2;
     }

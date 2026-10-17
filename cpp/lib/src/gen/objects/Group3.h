@@ -50,6 +50,7 @@ struct Group3Var0
 struct Group3Var1
 {
   static GroupVariationID ID() { return GroupVariationID(3,1); }
+  static const StaticDoubleBinaryVariation svariation = StaticDoubleBinaryVariation::Group3Var1;
 };
 
 // Double-bit Binary Input - With Flags

@@ -705,6 +705,65 @@ TEST_CASE(SUITE("A variation without flags is promoted to one with flags if qual
     REQUIRE(t.lower->PopWriteAsHex() == "C2 81 80 00 15 01 00 00 00 05 00 00 00 00");
 }
 
+TEST_CASE(SUITE("Double-bit inputs can be read packed, as g3v1"))
+{
+    DatabaseConfig database;
+    for (uint16_t i = 0; i < 5; ++i)
+        database.double_binary[i].svariation = StaticDoubleBinaryVariation::Group3Var1;
+    OutstationTestObject t(OutstationConfig(), std::move(database));
+    t.Transaction([](IUpdateHandler& db) {
+        db.Update(DoubleBitBinary(DoubleBit::INTERMEDIATE, Flags(0x01)), 0);
+        db.Update(DoubleBitBinary(DoubleBit::DETERMINED_OFF, Flags(0x01)), 1);
+        db.Update(DoubleBitBinary(DoubleBit::DETERMINED_ON, Flags(0x01)), 2);
+        db.Update(DoubleBitBinary(DoubleBit::INDETERMINATE, Flags(0x01)), 3);
+        db.Update(DoubleBitBinary(DoubleBit::DETERMINED_ON, Flags(0x01)), 4);
+    });
+    t.LowerLayerUp();
+
+    // 2 bits a point, the first in the least significant bits: 0, 1, 2, 3 = 0b11100100, then 2 = 0b10
+    t.SendToOutstation("C0 01 03 01 06"); // g3v1
+    REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 00 03 01 00 00 04 E4 02");
+    t.OnTxReady();
+
+    // the default variation, in a class 0 read too
+    t.SendToOutstation("C1 01 3C 01 06");
+    REQUIRE(t.lower->PopWriteAsHex() == "C1 81 80 00 03 01 00 00 04 E4 02");
+}
+
+TEST_CASE(SUITE("A double-bit input with abnormal flags is promoted from g3v1 to g3v2"))
+{
+    DatabaseConfig database;
+    database.double_binary[0].svariation = StaticDoubleBinaryVariation::Group3Var1;
+    OutstationTestObject t(OutstationConfig(), std::move(database));
+    t.Transaction([](IUpdateHandler& db) { db.Update(DoubleBitBinary(DoubleBit::DETERMINED_ON, Flags(0x05)), 0); });
+    t.LowerLayerUp();
+
+    t.SendToOutstation("C0 01 03 01 06");
+    REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 00 03 02 00 00 00 85");
+}
+
+TEST_CASE(SUITE("Binary output status can be read packed, as g10v1, and is promoted when not online"))
+{
+    DatabaseConfig database;
+    for (uint16_t i = 0; i < 3; ++i)
+        database.binary_output_status[i].svariation = StaticBinaryOutputStatusVariation::Group10Var1;
+    OutstationTestObject t(OutstationConfig(), std::move(database));
+    t.Transaction([](IUpdateHandler& db) {
+        db.Update(BinaryOutputStatus(true, Flags(0x01)), 0);
+        db.Update(BinaryOutputStatus(false, Flags(0x01)), 1);
+        db.Update(BinaryOutputStatus(true, Flags(0x01)), 2);
+    });
+    t.LowerLayerUp();
+
+    t.SendToOutstation("C0 01 0A 01 06"); // g10v1
+    REQUIRE(t.lower->PopWriteAsHex() == "C0 81 80 00 0A 01 00 00 02 05");
+    t.OnTxReady();
+
+    t.Transaction([](IUpdateHandler& db) { db.Update(BinaryOutputStatus(false, Flags(0x05)), 1); });
+    t.SendToOutstation("C1 01 0A 01 06");
+    REQUIRE(t.lower->PopWriteAsHex() == "C1 81 80 00 0A 01 00 00 00 01 0A 02 00 01 01 05 0A 01 00 02 02 01");
+}
+
 TEST_CASE(SUITE("ReadGrp20Var1"))
 {
     TestStaticCounter(StaticCounterVariation::Group20Var1, 5, "C0 81 80 00 14 01 00 00 00 01 05 00 00 00");

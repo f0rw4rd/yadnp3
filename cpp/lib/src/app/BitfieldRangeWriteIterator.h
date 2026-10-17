@@ -20,13 +20,16 @@
 #ifndef OPENDNP3_BITFIELDRANGEWRITEITERATOR_H
 #define OPENDNP3_BITFIELDRANGEWRITEITERATOR_H
 
+#include "opendnp3/gen/DoubleBit.h"
+
 #include <ser4cpp/serialization/LittleEndian.h>
 
 namespace opendnp3
 {
 
-// A facade for writing APDUs to an external buffer
-template<class IndexType> class BitfieldRangeWriteIterator
+// A facade for writing APDUs to an external buffer: a start/stop range of packed values of BITS bits each, the first
+// in the least significant bits (1 for binaries and binary output status, 2 for double-bit binaries)
+template<class IndexType, unsigned BITS = 1> class BitfieldRangeWriteIterator
 {
 public:
     static BitfieldRangeWriteIterator Null()
@@ -47,7 +50,7 @@ public:
         {
             IndexType::write_to(range, start_);
             pPosition->advance(2 * IndexType::size);
-            maxCount = pPosition->length() * 8;
+            maxCount = (pPosition->length() * 8) / BITS;
         }
     }
 
@@ -58,12 +61,7 @@ public:
             typename IndexType::type_t stop = start + count - 1;
             IndexType::write_to(range, stop);
 
-            auto num = count / 8;
-
-            if ((count % 8) > 0)
-            {
-                ++num;
-            }
+            const size_t num = (static_cast<size_t>(count) * BITS + 7) / 8;
 
             pPosition->advance(num);
         }
@@ -71,20 +69,29 @@ public:
 
     bool Write(bool value)
     {
+        return WriteBits(value ? 1 : 0);
+    }
+
+    bool Write(DoubleBit value)
+    {
+        return WriteBits(static_cast<uint8_t>(value));
+    }
+
+    bool WriteBits(uint8_t value)
+    {
         if (isValid && count < maxCount)
         {
-            auto byte = count / 8;
-            auto bit = count % 8;
+            const size_t position = static_cast<size_t>(count) * BITS;
+            const auto byte = position / 8;
+            const auto bit = position % 8;
 
             if (bit == 0)
             {
                 (*pPosition)[byte] = 0; // initialize byte to 0
             }
 
-            if (value)
-            {
-                (*pPosition)[byte] = ((*pPosition)[byte] | (1 << bit));
-            }
+            const auto mask = static_cast<uint8_t>((1u << BITS) - 1);
+            (*pPosition)[byte] = static_cast<uint8_t>((*pPosition)[byte] | ((value & mask) << bit));
 
             ++count;
             return true;

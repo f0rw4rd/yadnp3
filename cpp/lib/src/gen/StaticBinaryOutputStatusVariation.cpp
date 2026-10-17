@@ -45,6 +45,8 @@ StaticBinaryOutputStatusVariation StaticBinaryOutputStatusVariationSpec::from_ty
   {
     case(0):
       return StaticBinaryOutputStatusVariation::Group10Var2;
+    case(1):
+      return StaticBinaryOutputStatusVariation::Group10Var1;
     default:
       throw new std::invalid_argument("Unknown value");
   }
@@ -56,6 +58,8 @@ char const* StaticBinaryOutputStatusVariationSpec::to_string(StaticBinaryOutputS
   {
     case(StaticBinaryOutputStatusVariation::Group10Var2):
       return "Group10Var2";
+    case(StaticBinaryOutputStatusVariation::Group10Var1):
+      return "Group10Var1";
     default:
       return "UNDEFINED";
   }
@@ -67,6 +71,8 @@ char const* StaticBinaryOutputStatusVariationSpec::to_human_string(StaticBinaryO
   {
     case(StaticBinaryOutputStatusVariation::Group10Var2):
       return "Group10Var2";
+    case(StaticBinaryOutputStatusVariation::Group10Var1):
+      return "Group10Var1";
     default:
       return "UNDEFINED";
   }
@@ -75,6 +81,7 @@ char const* StaticBinaryOutputStatusVariationSpec::to_human_string(StaticBinaryO
 StaticBinaryOutputStatusVariation StaticBinaryOutputStatusVariationSpec::from_string(const std::string& arg)
 {
   if(arg == "Group10Var2") return StaticBinaryOutputStatusVariation::Group10Var2;
+  if(arg == "Group10Var1") return StaticBinaryOutputStatusVariation::Group10Var1;
   else throw std::invalid_argument(std::string("Unknown value: ") + arg);
 }
 

@@ -34,7 +34,8 @@ package com.automatak.dnp3.enums;
 */
 public enum StaticBinaryOutputStatusVariation
 {
-  Group10Var2(0);
+  Group10Var2(0),
+  Group10Var1(1);
 
   private final int id;
 
@@ -54,6 +55,8 @@ public enum StaticBinaryOutputStatusVariation
     {
       case(0):
         return Group10Var2;
+      case(1):
+        return Group10Var1;
       default:
         return Group10Var2;
     }

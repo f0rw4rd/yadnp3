@@ -132,4 +132,27 @@ template<> StaticAnalogVariation check_for_promotion<AnalogSpec>(const Analog& v
     }
 }
 
+// the packed variations carry the state alone: a point whose other flags aren't ONLINE alone is reported with flags
+template<>
+StaticDoubleBinaryVariation check_for_promotion<DoubleBitBinarySpec>(const DoubleBitBinary& value,
+                                                                     StaticDoubleBinaryVariation variation)
+{
+    if (variation == StaticDoubleBinaryVariation::Group3Var1 && (value.flags.value & 0x3F) != 0x01)
+    {
+        return StaticDoubleBinaryVariation::Group3Var2;
+    }
+    return variation;
+}
+
+template<>
+StaticBinaryOutputStatusVariation check_for_promotion<BinaryOutputStatusSpec>(const BinaryOutputStatus& value,
+                                                                              StaticBinaryOutputStatusVariation variation)
+{
+    if (variation == StaticBinaryOutputStatusVariation::Group10Var1 && (value.flags.value & 0x7F) != 0x01)
+    {
+        return StaticBinaryOutputStatusVariation::Group10Var2;
+    }
+    return variation;
+}
+
 } // namespace opendnp3
