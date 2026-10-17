@@ -28,12 +28,14 @@
 #include "opendnp3/master/IMaster.h"
 #include "opendnp3/master/MasterStackConfig.h"
 
+#include <functional>
 #include <memory>
 
 namespace opendnp3
 {
 
-class MasterStack : public IMaster,
+// IMaster is a virtual base, which the Secure Authentication master's interface (IMasterSA) shares
+class MasterStack : public virtual IMaster,
                     public ILinkSession,
                     public ILinkTx,
                     public std::enable_shared_from_this<MasterStack>,
@@ -213,6 +215,17 @@ public:
                        const TaskConfig& config) override;
 
 protected:
+    // makes the master context on top of the transport layer
+    using ContextFactory = std::function<std::shared_ptr<MContext>(const std::shared_ptr<ILowerLayer>& lower)>;
+
+    MasterStack(const Logger& logger,
+                const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
+                const std::shared_ptr<IMasterApplication>& application,
+                const std::shared_ptr<IOHandler>& iohandler,
+                const std::shared_ptr<IResourceManager>& manager,
+                const MasterStackConfig& config,
+                const ContextFactory& factory);
+
     std::shared_ptr<MContext> mcontext;
 };
 

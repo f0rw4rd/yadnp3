@@ -50,14 +50,14 @@
 namespace opendnp3
 {
 /*
-    All of the mutable state and configuration for a master
+    All of the mutable state and configuration for a master. Secure Authentication derives from it (MAuthContext).
 */
-class MContext final : public IUpperLayer,
-                       public std::enable_shared_from_this<MContext>,
-                       private IMasterTaskRunner,
-                       private Uncopyable
+class MContext : public IUpperLayer,
+                 public std::enable_shared_from_this<MContext>,
+                 private IMasterTaskRunner,
+                 private Uncopyable
 {
-private:
+protected:
     MContext(const Addresses& addresses,
              const Logger& logger,
              const std::shared_ptr<exe4cpp::IExecutor>& executor,
@@ -112,9 +112,9 @@ public:
 
     // --- implement  IUpperLayer ------
 
-    bool OnLowerLayerUp() final;
+    bool OnLowerLayerUp() override;
 
-    bool OnLowerLayerDown() final;
+    bool OnLowerLayerDown() override;
 
     bool OnReceive(const Message& message) final;
 

@@ -35,6 +35,26 @@ MasterStack::MasterStack(const Logger& logger,
                          const std::shared_ptr<IOHandler>& iohandler,
                          const std::shared_ptr<IResourceManager>& manager,
                          const MasterStackConfig& config)
+    : MasterStack(logger,
+                  executor,
+                  application,
+                  iohandler,
+                  manager,
+                  config,
+                  [&](const std::shared_ptr<ILowerLayer>& lower) {
+                      return MContext::Create(Addresses(config.link.LocalAddr, config.link.RemoteAddr), logger,
+                                              executor, lower, SOEHandler, application, scheduler, config.master);
+                  })
+{
+}
+
+MasterStack::MasterStack(const Logger& logger,
+                         const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
+                         const std::shared_ptr<IMasterApplication>& application,
+                         const std::shared_ptr<IOHandler>& iohandler,
+                         const std::shared_ptr<IResourceManager>& manager,
+                         const MasterStackConfig& config,
+                         const ContextFactory& factory)
     : StackBase(logger,
                 executor,
                 application,
@@ -42,14 +62,7 @@ MasterStack::MasterStack(const Logger& logger,
                 manager,
                 config.master.maxRxFragSize,
                 LinkLayerConfig(config.link, false)),
-      mcontext(MContext::Create(Addresses(config.link.LocalAddr, config.link.RemoteAddr),
-                                logger,
-                                executor,
-                                tstack.transport,
-                                SOEHandler,
-                                application,
-                                scheduler,
-                                config.master))
+      mcontext(factory(tstack.transport))
 {
     tstack.transport->SetAppLayer(*mcontext);
 }
