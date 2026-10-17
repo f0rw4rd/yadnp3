@@ -43,6 +43,7 @@ set(unittests_src
     ./TestMasterAssignClass.cpp
     ./TestMasterCommandRequests.cpp
     ./TestChallengeState.cpp
+    ./TestSessionKeyChangeState.cpp
     ./TestEncryptedUpdateKey.cpp
     ./TestEventTriggers.cpp
     ./TestFloatSerialization.cpp

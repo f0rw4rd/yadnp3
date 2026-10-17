@@ -52,7 +52,7 @@ public:
                                  KeyStatus status,
                                  const ser4cpp::rseq_t& hmac = ser4cpp::rseq_t());
 
-    /// Check if serialized object data matches the last status response
+    /// Check if serialized object data matches the last status response, byte for byte
     bool EqualsLastStatusResponse(const ser4cpp::rseq_t& object);
 
     /// Check if user and KSQ match the last key status response
@@ -65,9 +65,13 @@ private:
     ICryptoProvider* pProvider;
     uint32_t keyChangeSeqNum;
     std::array<uint8_t, AuthSizes::MAX_CHALLENGE_DATA_SIZE> challengeData;
-    Group120Var5 statusRsp;
 
-    static const uint32_t MAX_KEY_STATUS_BUFFER_SIZE = Group120Var5::MIN_SIZE + AuthSizes::MAX_CHALLENGE_DATA_SIZE;
+    static const uint32_t MAX_KEY_STATUS_BUFFER_SIZE
+        = Group120Var5::MIN_SIZE + AuthSizes::MAX_CHALLENGE_DATA_SIZE + AuthSizes::MAX_HMAC_OUTPUT_SIZE;
+
+    // the last key status as sent: the challenge data and the HMAC are copies, not views into caller buffers
+    std::array<uint8_t, MAX_KEY_STATUS_BUFFER_SIZE> lastStatus;
+    size_t lastStatusSize;
 };
 
 } // namespace opendnp3
