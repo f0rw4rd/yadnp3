@@ -411,3 +411,38 @@ TEST_CASE(SUITE("A user status change is sent as the authority made it, and its 
     REQUIRE(t.application->completions.back().type == MasterTaskType::USER_TASK);
     REQUIRE(t.application->completions.back().result == TaskCompletion::SUCCESS);
 }
+
+TEST_CASE(SUITE("Answering a challenge leaves no response timer of the challenged request running"))
+{
+    AuthFixture t;
+    t.AddDefaultUser();
+    t.context->OnLowerLayerUp();
+    t.exe->run_many();
+    t.SetSessionKeys();
+    const auto timeout = NoStartupTasks().responseTimeout.value;
+
+    CommandCallbackQueue first;
+    t.context->DirectOperate(CommandSet({WithIndex(ControlRelayOutputBlock(OperationType::PULSE_ON), 1)}),
+                             first.Callback(), TaskConfig::Default());
+    t.exe->run_many();
+    const auto request = t.PopWrite();
+    const auto seq = static_cast<uint8_t>(request[0] & 0x0F);
+
+    // the challenge comes halfway through the response timeout, and the control succeeds
+    t.exe->advance_time(timeout / 2);
+    t.exe->run_many();
+    t.Send(AuthResponse(seq, 1, Concat({UInt32(7), UInt16(1), {0x04, 0x01}, {0x10, 0x20, 0x30, 0x40}})));
+    t.PopWrite();
+    t.Send(Concat({{static_cast<uint8_t>(0xC0 | seq), 0x81, 0x00, 0x00}, Bytes(request.begin() + 2, request.end())}));
+    REQUIRE(first.values.front().summary == TaskCompletion::SUCCESS);
+
+    // the next control is not timed out when the first request's timeout comes round
+    CommandCallbackQueue second;
+    t.context->DirectOperate(CommandSet({WithIndex(ControlRelayOutputBlock(OperationType::PULSE_ON), 1)}),
+                             second.Callback(), TaskConfig::Default());
+    t.exe->run_many();
+    t.PopWrite();
+    t.exe->advance_time(timeout / 2 + std::chrono::milliseconds(1));
+    t.exe->run_many();
+    REQUIRE(second.values.empty());
+}

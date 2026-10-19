@@ -329,6 +329,8 @@ void MContext::Transmit(const ser4cpp::rseq_t& data)
 
 void MContext::StartResponseTimer()
 {
+    // the handle is the only way to cancel a running timer, so stop it before replacing it
+    this->responseTimer.cancel();
     auto timeout = [self = shared_from_this()]() { self->OnResponseTimeout(); };
     this->responseTimer = this->executor->start(this->params.responseTimeout.value, timeout);
 }
