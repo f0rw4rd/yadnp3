@@ -24,6 +24,8 @@
 
 #include <ser4cpp/serialization/LittleEndian.h>
 
+#include <algorithm>
+
 namespace opendnp3
 {
 
@@ -50,7 +52,9 @@ public:
         {
             IndexType::write_to(range, start_);
             pPosition->advance(2 * IndexType::size);
-            maxCount = (pPosition->length() * 8) / BITS;
+            // limited by the space left, and by the largest index the range can name
+            const size_t indices = static_cast<size_t>(IndexType::max_value) - start_ + 1;
+            maxCount = std::min((pPosition->length() * 8) / BITS, indices);
         }
     }
 
@@ -58,10 +62,10 @@ public:
     {
         if (isValid && count > 0)
         {
-            typename IndexType::type_t stop = start + count - 1;
+            const auto stop = static_cast<typename IndexType::type_t>(start + count - 1);
             IndexType::write_to(range, stop);
 
-            const size_t num = (static_cast<size_t>(count) * BITS + 7) / 8;
+            const size_t num = (count * BITS + 7) / 8;
 
             pPosition->advance(num);
         }
@@ -81,7 +85,7 @@ public:
     {
         if (isValid && count < maxCount)
         {
-            const size_t position = static_cast<size_t>(count) * BITS;
+            const size_t position = count * BITS;
             const auto byte = position / 8;
             const auto bit = position % 8;
 
@@ -109,7 +113,8 @@ public:
 
 private:
     typename IndexType::type_t start;
-    typename IndexType::type_t count;
+    // wider than the index: a full one-byte range is 256 values
+    size_t count;
 
     size_t maxCount;
 

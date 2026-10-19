@@ -35,6 +35,7 @@
 #include <gen/objects/Group60.h>
 
 #include <cassert>
+#include <vector>
 
 using namespace opendnp3;
 using namespace ser4cpp;
@@ -292,4 +293,42 @@ TEST_CASE(SUITE("WriteIINRestart"))
     }
 
     REQUIRE("C0 02 50 01 00 07 08 03" == HexConversions::to_hex(request.ToRSeq()));
+}
+
+TEST_CASE(SUITE("BitfieldIterator UInt8 boundary condition"))
+{
+    APDUResponse response(APDUHelpers::Response());
+    auto writer = response.GetWriter();
+
+    {
+        auto iterator
+            = writer.IterateOverSingleBitfield<UInt8>(GroupVariationID(1, 1), QualifierCode::UINT8_START_STOP, 0);
+        for (int i = 0; i < 256; ++i)
+        {
+            REQUIRE(iterator.Write(true));
+        }
+        REQUIRE_FALSE(iterator.Write(true));
+    }
+
+    // the stop index is 255, then 32 bytes of packed values, and nothing after them
+    REQUIRE(HexConversions::to_hex(response.ToRSeq())
+            == "C0 81 00 00 01 01 00 00 FF " + HexConversions::to_hex(std::vector<uint8_t>(32, 0xFF).data(), 32, true));
+}
+
+TEST_CASE(SUITE("BitfieldIterator stops at the largest index"))
+{
+    APDUResponse response(APDUHelpers::Response());
+    auto writer = response.GetWriter();
+
+    {
+        auto iterator
+            = writer.IterateOverDoubleBitfield<UInt8>(GroupVariationID(3, 1), QualifierCode::UINT8_START_STOP, 252);
+        for (int i = 0; i < 4; ++i)
+        {
+            REQUIRE(iterator.Write(DoubleBit::DETERMINED_ON));
+        }
+        REQUIRE_FALSE(iterator.Write(DoubleBit::DETERMINED_ON));
+    }
+
+    REQUIRE(HexConversions::to_hex(response.ToRSeq()) == "C0 81 00 00 03 01 00 FC FF AA");
 }
