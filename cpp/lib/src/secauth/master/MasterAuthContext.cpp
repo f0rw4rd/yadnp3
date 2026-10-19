@@ -234,17 +234,24 @@ void MAuthContext::OnAuthChallenge(const ser4cpp::rseq_t& apdu,
     {
         FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Challenge asks for an unsupported HMAC algorithm: %s",
                          HMACTypeSpec::to_human_string(challenge.hmacAlgo));
-        this->FailActiveTask(false);
+        this->FailActiveTask(Failure::AUTHENTICATION);
         return;
     }
 
     const auto user = this->activeTask->GetUser();
+    if (!this->users.UserExists(user.GetId()))
+    {
+        FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Challenged, but user %u isn't defined", user.GetId());
+        this->FailActiveTask(Failure::NO_USER);
+        return;
+    }
+
     SessionKeysView keys;
     if (this->sessions.TryGetKeyView(user.GetId(), keys, this->Now()) != KeyStatus::OK)
     {
         FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Challenged, but no valid session keys for user %u",
                          user.GetId());
-        this->FailActiveTask(false);
+        this->FailActiveTask(Failure::AUTHENTICATION);
         this->DemandSessionKeys(user.GetId());
         return;
     }
@@ -262,7 +269,7 @@ void MAuthContext::OnAuthChallenge(const ser4cpp::rseq_t& apdu,
     if (ec)
     {
         FORMAT_LOG_BLOCK(this->logger, flags::ERR, "Error calculating HMAC: %s", ec.message().c_str());
-        this->FailActiveTask(false);
+        this->FailActiveTask(Failure::AUTHENTICATION);
         return;
     }
 
@@ -271,7 +278,7 @@ void MAuthContext::OnAuthChallenge(const ser4cpp::rseq_t& apdu,
     if (!reply.GetWriter().WriteFreeFormat(Group120Var2(challenge.challengeSeqNum, user.GetId(), hmacValue)))
     {
         SIMPLE_LOG_BLOCK(this->logger, flags::ERR, "Unable to write challenge reply");
-        this->FailActiveTask(false);
+        this->FailActiveTask(Failure::AUTHENTICATION);
         return;
     }
 
@@ -301,7 +308,8 @@ void MAuthContext::OnAuthError(const APDUResponseHeader& header, const ser4cpp::
     FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Outstation reports authentication error: %s",
                      AuthErrorCodeSpec::to_human_string(code));
 
-    this->FailActiveTask(code == AuthErrorCode::AUTHORIZATION_FAILED);
+    this->FailActiveTask(code == AuthErrorCode::AUTHORIZATION_FAILED ? Failure::AUTHORIZATION
+                                                                     : Failure::AUTHENTICATION);
 
     // the outstation doesn't take the session keys: set them again
     if (code == AuthErrorCode::AUTHENTICATION_FAILED)
@@ -314,20 +322,24 @@ void MAuthContext::OnAuthError(const APDUResponseHeader& header, const ser4cpp::
     }
 }
 
-void MAuthContext::FailActiveTask(bool authorization)
+void MAuthContext::FailActiveTask(Failure failure)
 {
     // the outstation answered the request, so its sequence number is used
     this->responseTimer.cancel();
     this->solSeq.Increment();
 
     const auto now = this->Now();
-    if (authorization)
+    switch (failure)
     {
+    case (Failure::AUTHORIZATION):
         this->activeTask->OnAuthorizationFailure(now);
-    }
-    else
-    {
+        break;
+    case (Failure::NO_USER):
+        this->activeTask->OnNoUser(now);
+        break;
+    default:
         this->activeTask->OnAuthenticationFailure(now);
+        break;
     }
 
     this->CompleteActiveTask();

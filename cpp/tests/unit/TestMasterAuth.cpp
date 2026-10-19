@@ -321,20 +321,27 @@ TEST_CASE(SUITE("A challenged control is answered with the HMAC of the challenge
 TEST_CASE(SUITE("A challenge with no session keys fails the request, and sets the keys"))
 {
     AuthFixture t;
+    t.AddDefaultUser();
     t.context->OnLowerLayerUp();
     t.exe->run_many();
+    // the outstation doesn't take the keys
+    t.SetSessionKeys({0xAA, 0xBB, 0xCC, 0xDD}, false);
 
     CommandCallbackQueue queue;
     t.context->DirectOperate(CommandSet({WithIndex(ControlRelayOutputBlock(OperationType::PULSE_ON), 1)}),
                              queue.Callback(), TaskConfig::Default());
     t.exe->run_many();
     const auto request = t.PopWrite();
+    REQUIRE(request[1] == 0x05);
     const auto seq = static_cast<uint8_t>(request[0] & 0x0F);
 
     t.Send(AuthResponse(seq, 1, Concat({UInt32(7), UInt16(1), {0x04, 0x01}, {0x10, 0x20, 0x30, 0x40}})));
 
     REQUIRE(queue.values.size() == 1);
     REQUIRE(queue.values.front().summary == TaskCompletion::FAILURE_BAD_AUTHENTICATION);
+
+    // the master asks for the key status again
+    REQUIRE(ToHex(Bytes(t.PopWrite())).substr(2) == " 20 78 04 07 01 01 00");
 }
 
 TEST_CASE(SUITE("A challenge with another sequence number is ignored"))
@@ -445,4 +452,29 @@ TEST_CASE(SUITE("Answering a challenge leaves no response timer of the challenge
     t.exe->advance_time(timeout / 2 + std::chrono::milliseconds(1));
     t.exe->run_many();
     REQUIRE(second.values.empty());
+}
+
+TEST_CASE(SUITE("A challenge for a user the master doesn't have fails the request with no user"))
+{
+    AuthFixture t;
+    t.AddDefaultUser();
+    t.context->OnLowerLayerUp();
+    t.exe->run_many();
+    t.SetSessionKeys();
+
+    CommandCallbackQueue queue;
+    t.context->DirectOperate(CommandSet({WithIndex(ControlRelayOutputBlock(OperationType::PULSE_ON), 1)}),
+                             queue.Callback(), TaskConfig(TaskId::Undefined(), nullptr, User(5)));
+    t.exe->run_many();
+    const auto request = t.PopWrite();
+    const auto seq = static_cast<uint8_t>(request[0] & 0x0F);
+
+    t.Send(AuthResponse(seq, 1, Concat({UInt32(7), UInt16(5), {0x04, 0x01}, {0x10, 0x20, 0x30, 0x40}})));
+    REQUIRE(queue.values.size() == 1);
+    REQUIRE(queue.values.front().summary == TaskCompletion::FAILURE_NO_USER);
+
+    // and it asks for no session keys for that user
+    t.exe->advance_time(NoStartupTasks().taskRetryPeriod.value);
+    t.exe->run_many();
+    REQUIRE(t.lower->NumWrites() == 0);
 }

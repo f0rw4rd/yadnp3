@@ -91,8 +91,15 @@ private:
 
     void OnAuthError(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects);
 
+    enum class Failure
+    {
+        AUTHENTICATION,
+        AUTHORIZATION,
+        NO_USER
+    };
+
     // the outstation answered the active task's request with a failure: the task is complete
-    void FailActiveTask(bool authorization);
+    void FailActiveTask(Failure failure);
 
     // starts the user's session key task, or runs it again now
     void DemandSessionKeys(uint16_t userNum);
