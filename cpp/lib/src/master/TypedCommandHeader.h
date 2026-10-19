@@ -87,6 +87,13 @@ template<class T> ICommandCollection<T>& TypedCommandHeader<T>::Add(const T& com
     }
 
     this->records.push_back(WithIndex(command, index));
+
+    // a one-byte count can't number them all
+    if (this->records.size() > std::numeric_limits<uint8_t>::max())
+    {
+        this->use_single_byte_index = false;
+    }
+
     return *this;
 }
 

@@ -113,3 +113,22 @@ std::string WriteToHex(const CommandSet& commands, IndexQualifierMode mode)
     REQUIRE(CommandSetOps::Write(commands, writer, mode));
     return HexConversions::to_hex(request.ToRSeq().skip(2));
 }
+TEST_CASE(SUITE("Uses the two-byte qualifier for more commands than a one-byte count can hold"))
+{
+    TypedCommandHeader<AnalogOutputInt16> header(Group41Var2::Inst());
+    for (uint16_t i = 0; i < 256; ++i)
+    {
+        header.Add(AnalogOutputInt16(7), i);
+    }
+
+    StaticBuffer<2048> buffer;
+    auto dest = buffer.as_wseq();
+    APDURequest request(dest);
+    auto writer = request.GetWriter();
+
+    REQUIRE(header.Write(writer, IndexQualifierMode::allow_one_byte));
+
+    auto hex = HexConversions::to_hex(request.ToRSeq().skip(2));
+    REQUIRE(hex.substr(0, 26) == "29 02 28 00 01 00 00 07 00");
+    REQUIRE(request.ToRSeq().length() == 2 + 5 + 256 * 5);
+}
