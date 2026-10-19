@@ -332,3 +332,23 @@ TEST_CASE(SUITE("BitfieldIterator stops at the largest index"))
 
     REQUIRE(HexConversions::to_hex(response.ToRSeq()) == "C0 81 00 00 03 01 00 FC FF AA");
 }
+
+TEST_CASE(SUITE("PrefixIterator UInt8 boundary condition"))
+{
+    APDUResponse response(APDUHelpers::Response());
+    auto writer = response.GetWriter();
+
+    {
+        auto iterator
+            = writer.IterateOverCountWithPrefix<UInt8, Binary>(QualifierCode::UINT8_CNT_UINT8_INDEX, Group2Var1::Inst());
+        for (int i = 0; i < 255; ++i)
+        {
+            REQUIRE(iterator.Write(Binary(true), static_cast<uint8_t>(i)));
+        }
+        REQUIRE_FALSE(iterator.Write(Binary(true), 255));
+    }
+
+    std::string beginsWith("C0 81 00 00 02 01 17 FF 00 81 01 81");
+    REQUIRE(HexConversions::to_hex(response.ToRSeq()).substr(0, beginsWith.size()) == beginsWith);
+    REQUIRE(response.ToRSeq().length() == 4 + 4 + 255 * 2);
+}
