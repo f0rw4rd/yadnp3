@@ -63,9 +63,11 @@ template<typename T> std::shared_ptr<T> gil_safe_shared(std::shared_ptr<T> ptr)
  * method, the macro fails after its own GIL scope ended, and the failure needs the GIL: called on an ASIO thread, that
  * crashed the process.
  */
-#define YADNP3_OVERRIDE_PURE(...)                                                                                      \
+// the leading parameters are named because MSVC's traditional preprocessor passes a forwarded __VA_ARGS__ on as one
+// argument, which then lands in ret_type
+#define YADNP3_OVERRIDE_PURE(ret_type, cname, fn, ...)                                                                 \
     py::gil_scoped_acquire yadnp3_override_gil;                                                                        \
-    PYBIND11_OVERRIDE_PURE(__VA_ARGS__)
+    PYBIND11_OVERRIDE_PURE(ret_type, cname, fn, __VA_ARGS__)
 
 /**
  * Deletes an object whose destructor waits for the stack's threads with the GIL released: those threads may be
