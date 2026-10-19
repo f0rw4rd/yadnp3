@@ -1,4 +1,6 @@
-### 3.2.1.3 (f0rw4rd fork) ###
+### 3.2.1.4 (f0rw4rd fork) ###
+
+3.2.1.3 was tagged but not released: its Windows wheels failed to build. This release is 3.2.1.3 with that fixed.
 
 Breaking changes:
 * OpenSSL (libcrypto) is now required even with `DNP3_TLS=OFF`: Secure Authentication uses it
@@ -40,6 +42,7 @@ Bug fixes:
 
 Python bindings:
 * Keep Python handlers alive for the life of the stack, and fix two GIL deadlocks
+* Fix the Windows build of the bindings: MSVC's preprocessor passed the override macro's arguments on as one
 
 Testing:
 * Release gate (`scripts/release-check.sh`, run before every release in CI): unit, ASIO and integration tests under
