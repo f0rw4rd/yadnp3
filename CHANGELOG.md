@@ -1,3 +1,52 @@
+### 3.2.1.3 (f0rw4rd fork) ###
+
+Breaking changes:
+* OpenSSL (libcrypto) is now required even with `DNP3_TLS=OFF`: Secure Authentication uses it
+* File transfer: the master sends GET_FILE_INFO with g70v7 and reads the AUTHENTICATE_FILE key from g70v2, and the
+  outstation answers with those variations, as IEEE 1815 specifies. Both still accept the old forms, but a master
+  older than this version can't read the new outstation's answers to these two requests
+
+New features:
+* Secure Authentication master: session keys, challenge replies, user status changes, SA task completion codes
+* Outstation reports packed double-bit inputs (g3v1) and binary output status (g10v1)
+
+Conformance (found with the dnp3c conformance harness, IED Certification Procedure 3.1 rev 1 levels 1-3 and 2.7):
+* Answer reads of absent object types with IIN2.1
+* Report static objects in the order requested
+* Apply an assign class header to every header after it
+* Report the abnormal flags of counters and analogs, and analog changes to and from NaN
+* Honor broadcast record current time
+* Answer every link status check, and fail pending ones when the link closes
+
+Bug fixes:
+* Fix responses for a full one-byte range of 256 packed values (g1v1, g3v1, g10v1): the count wrapped to 0 and the
+  response was corrupt
+* Refuse a 256th object under a one-byte count prefix; the master uses two-byte indices for more than 255 commands
+* Master: cancel the running response timer before starting another, so a challenged request's timer can't time out
+  the next task
+* Master: don't process a repeated unsolicited fragment twice, but don't confirm a repeat of one that failed to parse,
+  and process the IIN of a repeat
+* Master: complete tasks that expect no response once they are sent
+* Master: accept the echo of a NaN analog setpoint; portable dead band floats, and report failed writes
+* File transfer: check blocks against the handle and sequence, fail a write on a bad block acknowledgement, send
+  DELETE_FILE with g70v3, bound g70 strings by their object, reject block requests that carry other headers
+* Secure Authentication: verify AES-128 update keys, one reply per challenge, match the whole last key status,
+  refuse key status too large to wrap, leave room for the key wrap padding, parse g120v3 and g120v4, fail a challenged
+  task of an undefined user with FAILURE_NO_USER, run user status changes after the session keys
+* Never hold an octet string of size 0, and keep empty octet strings empty outside the database
+* Serialize subnormal floats and doubles exactly
+* Saturate Timestamp arithmetic instead of overflowing
+* CMake and Doxygen carry the library version 3.2.1 (they said 3.1.2)
+
+Python bindings:
+* Keep Python handlers alive for the life of the stack, and fix two GIL deadlocks
+
+Testing:
+* Release gate (`scripts/release-check.sh`, run before every release in CI): unit, ASIO and integration tests under
+  ASan/UBSan with leak detection, fuzzing, dnp3c conformance and the Python tests
+* Master-outstation round-trip fuzzers for measurements, events, commands, small event buffers and lost unsolicited
+  confirms
+
 ### 3.2.1.2 (f0rw4rd fork) ###
 
 * Add Python 3.14 support (wheels, classifiers, CI matrix)

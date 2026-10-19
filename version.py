@@ -15,7 +15,7 @@ import sys
 
 # Static version configuration
 OPENDNP3_VERSION = "3.2.1"
-PACKAGE_REVISION = 2
+PACKAGE_REVISION = 3
 
 
 def get_git_tag_version():

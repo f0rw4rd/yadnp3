@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "yadnp3"
-version = "3.2.1.2"
+version = "3.2.1.3"
 description = "Python bindings for yadnp3 -- Yet Another opendnp3 fork (IEEE-1815 DNP3 protocol)"
 readme = "../README.md"
 license = "Apache-2.0"
