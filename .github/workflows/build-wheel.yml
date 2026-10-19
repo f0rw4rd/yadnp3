@@ -99,7 +99,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-2022]
-        python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+        python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
 
     steps:
       - uses: actions/checkout@v4
@@ -199,8 +199,8 @@ jobs:
           Python bindings for [yadnp3](https://github.com/f0rw4rd/opendnp3) -- Yet Another opendnp3 fork (IEEE-1815 DNP3).
 
           ### Supported Platforms
-          - Linux x86_64 (manylinux_2_28, Python 3.9-3.14)
-          - Windows x86_64 (Python 3.9-3.14)
+          - Linux x86_64 (manylinux_2_28, Python 3.9-3.15)
+          - Windows x86_64 (Python 3.9-3.15)
 
           ### Installation
 
