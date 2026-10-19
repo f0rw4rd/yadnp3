@@ -24,11 +24,12 @@ namespace opendnp3
 {
 namespace priority
 {
-    const int USER_STATUS_CHANGE = 20;
-
     const int UPDATE_KEY_CHANGE = 40;
 
     const int SESSION_KEY = 50;
+
+    // a critical request: the outstation challenges it, so the session keys go first
+    const int USER_STATUS_CHANGE = 60;
 
     const int COMMAND = 100;
 

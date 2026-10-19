@@ -478,3 +478,20 @@ TEST_CASE(SUITE("A challenge for a user the master doesn't have fails the reques
     t.exe->run_many();
     REQUIRE(t.lower->NumWrites() == 0);
 }
+
+TEST_CASE(SUITE("A user status change queued as the master comes online waits for the session keys"))
+{
+    AuthFixture t;
+    t.AddDefaultUser();
+    t.context->OnLowerLayerUp();
+    t.context->ChangeUserStatus(UserStatusChange(KeyChangeMethod::AES_128_SHA1_HMAC, UserOperation::OP_ADD, 9, 2, 30,
+                                                 "bob", {}, {0xC1, 0xC2, 0xC3}),
+                                TaskConfig::Default());
+    t.exe->run_many();
+
+    // the key status request goes first
+    t.SetSessionKeys();
+    t.exe->run_many();
+    const auto request = t.PopWrite();
+    REQUIRE(ToHex(Bytes(request.begin() + 1, request.begin() + 4)) == "20 78 0A");
+}
