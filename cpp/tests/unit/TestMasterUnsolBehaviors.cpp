@@ -88,3 +88,40 @@ TEST_CASE(SUITE("An unsolicited fragment with the same sequence number but other
     t.context->OnTxReady();
     REQUIRE(t.meas->TotalReceived() == 2);
 }
+
+TEST_CASE(SUITE("A repeat of an unsolicited fragment that failed to parse is not confirmed"))
+{
+    MasterTestFixture t(NoStartupTasks());
+    t.context->OnLowerLayerUp();
+    t.exe->run_many();
+
+    const std::string unsol = "F2 82 00 00 01 02 00 02 03 81"; // g1v2 indices 2 to 3, but only one value
+    t.SendToMaster(unsol);
+    REQUIRE(t.lower->NumWrites() == 0);
+
+    t.SendToMaster(unsol);
+    REQUIRE(t.lower->NumWrites() == 0);
+    REQUIRE(t.meas->TotalReceived() == 0);
+}
+
+TEST_CASE(SUITE("The IIN of a repeated unsolicited fragment is processed"))
+{
+    MasterTestFixture t(NoStartupTasks());
+    t.context->OnLowerLayerUp();
+    t.exe->run_many();
+
+    // the outstation restarts twice, and sends the same null unsolicited response each time
+    const auto restart = hex::NullUnsolicited(0, IINField(IINBit::DEVICE_RESTART));
+    for (uint8_t seq = 0; seq < 2; ++seq)
+    {
+        t.SendToMaster(restart);
+        REQUIRE(t.lower->PopWriteAsHex() == hex::UnsolConfirm(0));
+        t.context->OnTxReady();
+        t.exe->run_many();
+
+        REQUIRE(t.lower->PopWriteAsHex() == hex::ClearRestartIIN(seq));
+        t.context->OnTxReady();
+        t.SendToMaster(hex::EmptyResponse(seq, IINField::Empty()));
+        t.exe->run_many();
+    }
+}

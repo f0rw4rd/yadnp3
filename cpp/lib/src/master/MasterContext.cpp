@@ -265,26 +265,29 @@ void MContext::ProcessUnsolicitedResponse(const APDUResponseHeader& header, cons
         return;
     }
 
+    std::vector<uint8_t> fragment;
     if (header.control.CON)
     {
-        // a retry of the last fragment, whose confirm the outstation didn't get: confirm it again, without
+        // a retry of the last confirmed fragment, whose confirm the outstation didn't get: confirm it again, without
         // processing its events twice
-        std::vector<uint8_t> fragment{header.control.ToByte(), header.IIN.LSB, header.IIN.MSB};
+        fragment = {header.control.ToByte(), header.IIN.LSB, header.IIN.MSB};
         fragment.insert(fragment.end(), static_cast<const uint8_t*>(objects),
                         static_cast<const uint8_t*>(objects) + objects.length());
         if (fragment == this->lastUnsolicited)
         {
             SIMPLE_LOG_BLOCK(logger, flags::WARN, "Confirming a repeated unsolicited response without processing it");
             this->QueueConfirm(APDUHeader::UnsolicitedConfirm(header.control.SEQ));
+            this->ProcessIIN(header.IIN);
             return;
         }
-        this->lastUnsolicited = std::move(fragment);
     }
 
     auto result = MeasurementHandler::ProcessMeasurements(header.as_response_info(), objects, logger, SOEHandler.get());
 
     if ((result == ParseResult::OK) && header.control.CON)
     {
+        // only a fragment that was processed and confirmed counts as delivered
+        this->lastUnsolicited = std::move(fragment);
         this->QueueConfirm(APDUHeader::UnsolicitedConfirm(header.control.SEQ));
     }
 
