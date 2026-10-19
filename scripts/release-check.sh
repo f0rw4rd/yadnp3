@@ -4,6 +4,9 @@
 #
 #   scripts/release-check.sh [stage...]       stages: unit fuzz conformance python (default: all)
 #
+# CI (build-wheel.yml) runs unit, conformance and python on a release tag; fuzz runs only here, so run the full
+# script locally before tagging.
+#
 # Environment:
 #   OUT            where builds, logs and reports go (default: build-release-check)
 #   FUZZ_SECONDS   how long each fuzzer runs after replaying its corpus (default: 300)

@@ -16,11 +16,12 @@ permissions:
   contents: read
 
 jobs:
-  # the release gate: sanitized unit tests, fuzzing, dnp3c conformance and the Python tests (scripts/release-check.sh)
+  # the release gate: sanitized unit tests, dnp3c conformance and the Python tests (scripts/release-check.sh). Fuzzing
+  # is left to local runs of the script: it took 110 of the gate's 156 minutes here
   release-check:
     name: Release check
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 90
     permissions:
       contents: read
     steps:
@@ -29,35 +30,18 @@ jobs:
       - name: Install tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang libssl-dev maven openjdk-17-jdk-headless
-
-      - name: Restore the fuzz corpus of earlier runs
-        uses: actions/cache/restore@v4
-        with:
-          path: build-release-check/fuzz-corpus
-          key: fuzz-corpus-${{ github.run_id }}
-          restore-keys: fuzz-corpus-
+          sudo apt-get install -y libssl-dev maven openjdk-17-jdk-headless
 
       - name: Run the release check
-        env:
-          FUZZ_SECONDS: 600
-        run: scripts/release-check.sh unit fuzz conformance python
+        run: scripts/release-check.sh unit conformance python
 
-      - name: Save the fuzz corpus
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: build-release-check/fuzz-corpus
-          key: fuzz-corpus-${{ github.run_id }}
-
-      - name: Upload logs, reports and fuzz crashes
+      - name: Upload logs and reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: release-check
           path: |
             build-release-check/*.log
-            build-release-check/fuzz-artifacts
             conformance/results
 
   build-wheels:
