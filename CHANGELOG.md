@@ -1,3 +1,8 @@
+### 3.2.1.5 (f0rw4rd fork) ###
+
+* Add Python 3.15 support (wheels, classifier, CI matrix), built with cibuildwheel 4.3
+* CI release gate no longer fuzzes; run `scripts/release-check.sh` locally before tagging for that
+
 ### 3.2.1.4 (f0rw4rd fork) ###
 
 3.2.1.3 was tagged but not released: its Windows wheels failed to build. This release is 3.2.1.3 with that fixed.
