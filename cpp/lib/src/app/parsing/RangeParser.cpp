@@ -184,6 +184,7 @@ ParseResult RangeParser::ParseRangeOfObjects(
         return ParseRangeOfOctetData(buffer, record, range, pLogger, pHandler);
 
     case (GroupVariation::Group0Var0):
+    case (GroupVariation::Group0Var255):
         return ParseRangeOfDeviceAttributes(buffer, record, range, pLogger, pHandler);
 
     default:
